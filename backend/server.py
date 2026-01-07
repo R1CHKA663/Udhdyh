@@ -339,7 +339,7 @@ async def telegram_auth(data: TelegramAuthData):
             "last_login": datetime.now(timezone.utc).isoformat()
         }
         await db.users.insert_one(user)
-        del user["_id"] if "_id" in user else None
+        user.pop("_id", None)
     
     token = create_token(user["id"])
     return {"success": True, "token": token, "user": user}
