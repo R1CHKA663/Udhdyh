@@ -215,12 +215,15 @@ async def init_bank():
             "dice": 10000,
             "mines": 10000,
             "bubbles": 10000,
+            "wheel": 10000,
             "normal_dice": 10000,
             "normal_mines": 10000,
             "normal_bubbles": 10000,
+            "normal_wheel": 10000,
             "fee_dice": 25,
             "fee_mines": 25,
             "fee_bubbles": 25,
+            "fee_wheel": 25,
             "jackpot_sum": 100
         })
 
