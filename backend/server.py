@@ -144,14 +144,21 @@ def create_token(user_id: str) -> str:
 
 def verify_telegram_auth(data: dict) -> bool:
     """Verify Telegram Login Widget data"""
-    check_hash = data.pop('hash', None)
+    check_hash = data.get('hash')
     if not check_hash:
         return False
     
-    data_check_arr = [f"{k}={v}" for k, v in sorted(data.items()) if v]
+    # Create data check string (sorted alphabetically, without hash)
+    data_check_arr = []
+    for key in sorted(data.keys()):
+        if key != 'hash' and data[key] is not None and data[key] != '':
+            data_check_arr.append(f"{key}={data[key]}")
     data_check_string = "\n".join(data_check_arr)
     
+    # Create secret key from bot token
     secret_key = hashlib.sha256(TELEGRAM_BOT_TOKEN.encode()).digest()
+    
+    # Calculate HMAC-SHA256
     hmac_hash = hmac.new(secret_key, data_check_string.encode(), hashlib.sha256).hexdigest()
     
     return hmac_hash == check_hash
