@@ -1,0 +1,250 @@
+.cards {
+	background: #17212b !important;
+}
+
+body {
+    background-color: #0e1621 !important;
+    color: #fff!important;
+}
+
+.diceRouletteBox {
+    background-color: #183856 !important;
+    border: 1px solid #17212b !important;
+}
+
+.form-control {
+    background-color: rgb(24, 37, 51) !important;
+    border: 1px solid #1a222c!important;
+    color: #d2d2d2!important;
+}
+.amount-number {
+	border: 1px solid #182533 !important;
+	background-image: linear-gradient(360deg,#163756,#193856) !important;
+	color: #d2d2d2!important;
+}
+
+ .amount-number:hover {
+  background-image: linear-gradient(360deg,#215380,#1d4e7b) !important;
+}
+
+.games-item {
+    border-top: 1px solid #17212b !important;
+}
+.still svg {
+    fill: #fff  !important;
+
+}
+.still .games-title {
+    color: #fff!important;
+}
+
+.games-menu {
+	box-shadow: none !important;
+}
+.games-item:hover {
+    border-left: 4px solid #478ffe!important;
+}
+.games-item.isActive {
+    border-left: 4px solid #478ffe!important;
+}
+.lds-ellipsis div
+{
+	background: #ffbb29  !important;
+}
+.games-title {
+    color: #fff !important;
+}
+ .games-menu {
+	     background-color: #17212b  !important;
+ }
+ .buttons .amount-number:last-child {
+    /* border-right: 1px solid #383e42 !important; */
+    /* border-bottom-right-radius: 5px; */
+    /* border-right: 1px solid #ced4da; */
+    /* border-top-right-radius: 5px; */
+}
+
+.header {
+    background-color: #17212b !important;
+    border-bottom: 1px solid #17212b !important;
+	box-shadow: none !important;
+
+}
+.form-control:focus {
+
+   border-color: #3d3d3d!important;
+
+}
+
+.likeLevlBox {
+	background-color: #0e1621 !important;
+}
+
+.users-balance {
+    color: #f4f4f4
+}
+
+tbody tr {
+    background: #141c25
+}
+
+tbody tr:not(:first-child) {
+    border-top: 10px solid #0e1621;
+}
+
+table thead {
+    background: rgb(23 33 43)!important;
+}
+
+.games-item {
+    border-left: 4px solid #17212b!important;
+}
+
+.lvl, .sumDep  {
+    color: #fff!important;
+}
+.logoBox div {
+    color: #fff!important;
+}
+.mines .cell.win {
+    opacity: 0.75;
+}
+
+.winT {
+    background-color: #163756 !important;
+    border: 2px solid #17212bc4 !important;
+	color: #eee !important;
+}
+.card-header {
+    background-color: #17212b !important;
+}
+.stepsCoffs {
+	border: 1px solid #3d3d3d  !important;
+}
+.stepsCoffs.win {
+    border: 1px solid #28a745d6 !important;
+    color: #28a745fa !important;
+}
+
+.stepsCoffs.active {
+    border: 1px solid #8696a8  !important;
+    color: #8696a8  !important;
+}
+
+
+.header-menu .item:hover {
+    color: #ffbc2c!important;
+
+}
+@media (max-width: 992px) {
+
+
+.header-menu {
+ background-color: #17212b;
+    border-top: 1px solid #0e1621 !important;
+
+}
+.header-menu .item {
+	border-top: 1px solid #0e1621 !important;
+    border-bottom: 1px solid #0e1621  !important;
+    border-right: 1px solid #0e1621  !important;
+
+}
+}
+.cards, .blue {
+	box-shadow: none !important;
+}
+td, th {
+    border-bottom: 1px solid #5c5c5c2e !important;
+}
+
+.noty.success {
+    background-image: linear-gradient(45deg,#165a28,#1d7237)  !important;;
+}
+
+.noty.error {
+    background-image: linear-gradient(45deg,#5a1616,#721d1d) !important;
+}
+.close {
+	    color: #eee !important;
+}
+.modal-header {
+border-bottom: 1px solid #182533 !important;
+}
+.modal-content {
+	background-color: #182533 !important;
+}
+.vue-notification.success {
+
+    border-left-color: #326b42 !important;
+    background-image: linear-gradient(45deg,#165a28,#1d7237) !important;
+}
+
+.vue-notification.error {
+    border-left-color: #731e18 !important;
+    background-image: linear-gradient(45deg,#5a1616,#721d1d) !important;
+}
+
+
+.amount-number.amounts {
+
+  color: #fff!important;
+}
+.mines .cell {
+    border: none !important;
+    background-color: #163756ba !important;
+}
+
+.mines .cell, .mines .cell.lose, .mines .cell.win {
+    box-shadow: 0px 4px 0px #26323e!important;
+}
+
+.mines .cell:hover {
+   background-color: #215380;
+}
+
+ .legend-wheel-coefficient {
+	 background-color: #17212b!important;
+
+ }
+
+.header-menu .item {
+    color: #efefef;
+}
+.header-menu .item:hover {
+    color: #fff!important;
+}
+
+.Header-text {
+    color: rgb(212 212 212)!important;
+}
+
+.header-menu .item.isActive {
+    color: #fff;
+}
+
+ .legend-wheel-inner {
+     background-color: #17212b !important;
+ }
+
+ .mines .bombs .amount-number.active {
+
+    background-image: linear-gradient(360deg,#215380,#1d4e7b) !important;
+}
+
+ .legend-wheel-coefficient-item>span {
+    color: #dedede   !important;
+ }
+
+.live_ {
+    background-image: linear-gradient(45deg,#17212b,#17212b)!important;
+    color: #fff;
+    box-shadow: 0 0 5px 0 #242f55!important;
+}
+.live .coef {
+    color: #fff;
+}
+
+.live .slotname{
+    color: #fff !important;
+}
