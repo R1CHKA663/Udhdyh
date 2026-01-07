@@ -284,13 +284,28 @@ def get_mines_coefficient(bombs: int, opened: int) -> float:
 @api_router.post("/auth/telegram")
 async def telegram_auth(data: TelegramAuthData):
     """Authenticate via Telegram Login Widget"""
-    auth_data = data.model_dump()
-    ref_code = auth_data.pop('ref_code', None)
+    auth_data = {
+        'id': data.id,
+        'first_name': data.first_name,
+        'auth_date': data.auth_date,
+        'hash': data.hash
+    }
+    if data.last_name:
+        auth_data['last_name'] = data.last_name
+    if data.username:
+        auth_data['username'] = data.username
+    if data.photo_url:
+        auth_data['photo_url'] = data.photo_url
     
-    # For development, skip hash verification if auth_date is recent
-    current_time = int(datetime.now(timezone.utc).timestamp())
-    if current_time - data.auth_date > 86400:
-        raise HTTPException(status_code=400, detail="Данные авторизации устарели")
+    ref_code = data.ref_code
+    
+    # Verify Telegram data
+    if not verify_telegram_auth(auth_data):
+        logger.warning(f"Invalid Telegram auth hash for user {data.id}")
+        # For development, allow if auth_date is recent (within 24 hours)
+        current_time = int(datetime.now(timezone.utc).timestamp())
+        if current_time - data.auth_date > 86400:
+            raise HTTPException(status_code=400, detail="Ошибка верификации данных Telegram")
     
     # Check if user exists
     user = await db.users.find_one({"telegram_id": data.id}, {"_id": 0})
@@ -327,12 +342,12 @@ async def telegram_auth(data: TelegramAuthData):
             "username": data.username or "",
             "name": name,
             "img": data.photo_url or "/logo.png",
-            "balance": 0,
-            "deposit": 0,
-            "raceback": 0,
+            "balance": 0.0,
+            "deposit": 0.0,
+            "raceback": 0.0,
             "referalov": 0,
-            "income": 0,
-            "income_all": 0,
+            "income": 0.0,
+            "income_all": 0.0,
             "ref_link": ref_link,
             "invited_by": invited_by,
             "is_admin": False,
@@ -340,13 +355,13 @@ async def telegram_auth(data: TelegramAuthData):
             "is_ban_comment": None,
             "is_youtuber": False,
             "is_drain": False,
-            "is_drain_chance": 20,
-            "wager": 0,
+            "is_drain_chance": 20.0,
+            "wager": 0.0,
             "created_at": datetime.now(timezone.utc).isoformat(),
             "last_login": datetime.now(timezone.utc).isoformat()
         }
         await db.users.insert_one(user)
-        user.pop("_id", None)
+        user = await db.users.find_one({"telegram_id": data.id}, {"_id": 0})
     
     token = create_token(user["id"])
     return {"success": True, "token": token, "user": user}
