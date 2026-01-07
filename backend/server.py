@@ -129,12 +129,19 @@ class BankUpdate(BaseModel):
     dice: Optional[float] = None
     mines: Optional[float] = None
     bubbles: Optional[float] = None
+    wheel: Optional[float] = None
     normal_dice: Optional[float] = None
     normal_mines: Optional[float] = None
     normal_bubbles: Optional[float] = None
+    normal_wheel: Optional[float] = None
     fee_dice: Optional[float] = None
     fee_mines: Optional[float] = None
     fee_bubbles: Optional[float] = None
+    fee_wheel: Optional[float] = None
+
+class WheelPlayRequest(BaseModel):
+    bet: float = Field(ge=1, le=1000000)
+    level: int = Field(ge=1, le=3)
 
 # ================== HELPERS ==================
 
