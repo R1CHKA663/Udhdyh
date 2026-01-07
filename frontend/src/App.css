@@ -516,6 +516,14 @@ main {
 
 .telegram-widget {
   margin-bottom: 20px;
+  min-height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.telegram-widget iframe {
+  border-radius: 10px !important;
 }
 
 .login-divider {
