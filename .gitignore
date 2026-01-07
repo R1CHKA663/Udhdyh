@@ -80,3 +80,7 @@ agenthub/agents/youtube/db
 android-sdk/ project.zip
 кайфули/скрипт/kaifuli.zip
 project.zip
+-e 
+# Environment files
+*.env
+*.env.*
