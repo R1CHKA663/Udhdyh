@@ -187,6 +187,53 @@ const Login = () => {
 
   const refCode = new URLSearchParams(location.search).get('ref');
 
+  useEffect(() => {
+    // Define global callback for Telegram Widget
+    window.onTelegramAuth = async (tgUser) => {
+      setLoading(true);
+      try {
+        const res = await api.post('/auth/telegram', { 
+          id: tgUser.id,
+          first_name: tgUser.first_name,
+          last_name: tgUser.last_name || '',
+          username: tgUser.username || '',
+          photo_url: tgUser.photo_url || '',
+          auth_date: tgUser.auth_date,
+          hash: tgUser.hash,
+          ref_code: refCode 
+        });
+        if (res.data.success) {
+          login(res.data.token, res.data.user);
+          toast.success('Добро пожаловать!');
+          navigate('/');
+        }
+      } catch (e) {
+        toast.error(e.response?.data?.detail || 'Ошибка авторизации');
+      }
+      setLoading(false);
+    };
+
+    // Load Telegram Widget script
+    const script = document.createElement('script');
+    script.src = 'https://telegram.org/js/telegram-widget.js?22';
+    script.setAttribute('data-telegram-login', 'Irjeukdnr_bot');
+    script.setAttribute('data-size', 'large');
+    script.setAttribute('data-radius', '10');
+    script.setAttribute('data-onauth', 'onTelegramAuth(user)');
+    script.setAttribute('data-request-access', 'write');
+    script.async = true;
+
+    const container = document.getElementById('telegram-login-container');
+    if (container) {
+      container.innerHTML = '';
+      container.appendChild(script);
+    }
+
+    return () => {
+      delete window.onTelegramAuth;
+    };
+  }, [refCode, login, navigate]);
+
   const handleDemoLogin = async () => {
     setLoading(true);
     try {
@@ -203,28 +250,6 @@ const Login = () => {
     setLoading(false);
   };
 
-  const handleTelegramLogin = () => {
-    // Telegram Login Widget callback
-    window.onTelegramAuth = async (tgUser) => {
-      setLoading(true);
-      try {
-        const res = await api.post('/auth/telegram', { ...tgUser, ref_code: refCode });
-        if (res.data.success) {
-          login(res.data.token, res.data.user);
-          toast.success('Добро пожаловать!');
-          navigate('/');
-        }
-      } catch (e) {
-        toast.error(e.response?.data?.detail || 'Ошибка авторизации');
-      }
-      setLoading(false);
-    };
-  };
-
-  useEffect(() => {
-    handleTelegramLogin();
-  }, []);
-
   return (
     <div className="page login-page" data-testid="login-page">
       <div className="login-card">
@@ -232,13 +257,8 @@ const Login = () => {
         <h2>Вход в EASY MONEY</h2>
         <p>Авторизуйтесь через Telegram для начала игры</p>
         
-        <div className="telegram-widget" data-testid="telegram-widget">
-          <script async src="https://telegram.org/js/telegram-widget.js?22" 
-            data-telegram-login="Irjeukdnr_bot" 
-            data-size="large" 
-            data-onauth="onTelegramAuth(user)"
-            data-request-access="write">
-          </script>
+        <div id="telegram-login-container" className="telegram-widget" data-testid="telegram-widget">
+          {/* Telegram Widget will be inserted here */}
         </div>
 
         <div className="login-divider"><span>или</span></div>
