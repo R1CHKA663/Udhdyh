@@ -367,12 +367,12 @@ async def demo_auth(username: str = "demo_user", ref_code: Optional[str] = None)
             "username": username,
             "name": username,
             "img": "/logo.png",
-            "balance": 1000,  # Demo balance
-            "deposit": 0,
-            "raceback": 0,
+            "balance": 1000.0,  # Demo balance
+            "deposit": 0.0,
+            "raceback": 0.0,
             "referalov": 0,
-            "income": 0,
-            "income_all": 0,
+            "income": 0.0,
+            "income_all": 0.0,
             "ref_link": ref_link,
             "invited_by": invited_by,
             "is_admin": False,
@@ -380,12 +380,14 @@ async def demo_auth(username: str = "demo_user", ref_code: Optional[str] = None)
             "is_ban_comment": None,
             "is_youtuber": False,
             "is_drain": False,
-            "is_drain_chance": 20,
-            "wager": 0,
+            "is_drain_chance": 20.0,
+            "wager": 0.0,
             "created_at": datetime.now(timezone.utc).isoformat(),
             "last_login": datetime.now(timezone.utc).isoformat()
         }
         await db.users.insert_one(user)
+        # Fetch without _id
+        user = await db.users.find_one({"id": user_id}, {"_id": 0})
     
     token = create_token(user["id"])
     return {"success": True, "token": token, "user": user}
