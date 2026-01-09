@@ -1798,7 +1798,69 @@ main {
 }
 
 .wheel-spin-btn {
+  background: linear-gradient(135deg, var(--accent-green), #059669);
+  color: white;
+  padding: 16px 32px;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 1rem;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s;
+  width: 100%;
+}
 
+.wheel-spin-btn:hover {
+  transform: scale(1.02);
+  box-shadow: 0 0 20px rgba(16, 185, 129, 0.4);
+}
+
+.wheel-spin-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Fix wheel center logo */
+.wheel-logo img {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.wheel-center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 100px;
+  height: 100px;
+  background: linear-gradient(135deg, var(--bg-card), var(--bg-secondary));
+  border-radius: 50%;
+  border: 3px solid var(--accent-yellow);
+  box-shadow: 0 0 0 6px rgba(0, 0, 0, 0.3), 0 0 20px rgba(245, 158, 11, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  overflow: hidden;
+}
+
+/* Fix wheel pointer - show on right side */
+.wheel-pointer {
+  position: absolute;
+  top: 50%;
+  right: -15px;
+  transform: translateY(-50%);
+  width: 0;
+  height: 0;
+  border-top: 18px solid transparent;
+  border-bottom: 18px solid transparent;
+  border-right: 30px solid var(--accent-yellow);
+  filter: drop-shadow(-2px 0 4px rgba(0, 0, 0, 0.5));
+  z-index: 20;
+}
 
 /* Slots Page */
 .slots-page {
