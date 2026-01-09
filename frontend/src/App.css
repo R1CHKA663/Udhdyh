@@ -1638,6 +1638,8 @@ main {
   align-items: center;
   justify-content: center;
   min-height: 500px;
+  flex-direction: column;
+  padding: 40px;
 }
 
 .wheel-container {
