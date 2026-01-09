@@ -1569,28 +1569,44 @@ const AdminDashboard = () => {
         {tab === 'promos' && (
           <div className="admin-promos" data-testid="admin-promos">
             <h2>Промокоды</h2>
-            <div className="promo-form">
-              <input type="text" value={newPromo.name} onChange={e => setNewPromo({...newPromo, name: e.target.value})} placeholder="Название" />
-              <input type="number" value={newPromo.reward} onChange={e => setNewPromo({...newPromo, reward: +e.target.value})} placeholder="Награда" />
-              <input type="number" value={newPromo.limit} onChange={e => setNewPromo({...newPromo, limit: +e.target.value})} placeholder="Лимит" />
-              <button onClick={createPromo}>Создать</button>
+            <div className="promo-form-advanced">
+              <div className="promo-row">
+                <input type="text" value={newPromo.name} onChange={e => setNewPromo({...newPromo, name: e.target.value})} placeholder="Название" />
+                <select value={newPromo.type} onChange={e => setNewPromo({...newPromo, type: +e.target.value})}>
+                  {promoTypes.map((t, i) => <option key={i} value={i}>{t}</option>)}
+                </select>
+              </div>
+              <div className="promo-row">
+                <input type="number" value={newPromo.reward} onChange={e => setNewPromo({...newPromo, reward: +e.target.value})} placeholder="Награда ₽" />
+                <input type="number" value={newPromo.limit} onChange={e => setNewPromo({...newPromo, limit: +e.target.value})} placeholder="Лимит" />
+              </div>
+              <div className="promo-row">
+                <input type="number" value={newPromo.wager_multiplier} onChange={e => setNewPromo({...newPromo, wager_multiplier: +e.target.value})} placeholder="Вейджер x" />
+                <input type="number" value={newPromo.bonus_percent} onChange={e => setNewPromo({...newPromo, bonus_percent: +e.target.value})} placeholder="Бонус к депозиту %" />
+              </div>
+              <div className="promo-row">
+                <label><input type="checkbox" checked={newPromo.deposit_required} onChange={e => setNewPromo({...newPromo, deposit_required: e.target.checked})} /> Требуется депозит</label>
+                <button onClick={createPromo}>Создать</button>
+              </div>
             </div>
             <table>
               <thead>
                 <tr>
                   <th>Название</th>
+                  <th>Тип</th>
                   <th>Награда</th>
+                  <th>Вейджер</th>
                   <th>Использовано</th>
-                  <th>Лимит</th>
                 </tr>
               </thead>
               <tbody>
                 {promos.map(p => (
                   <tr key={p.id}>
                     <td>{p.name}</td>
-                    <td>{p.reward} ₽</td>
-                    <td>{p.limited}</td>
-                    <td>{p.limit}</td>
+                    <td>{promoTypes[p.type] || 'Баланс'}</td>
+                    <td>{p.type === 1 ? `${p.bonus_percent}%` : `${p.reward}₽`}</td>
+                    <td>x{p.wager_multiplier || 3}</td>
+                    <td>{p.limited}/{p.limit}</td>
                   </tr>
                 ))}
               </tbody>
