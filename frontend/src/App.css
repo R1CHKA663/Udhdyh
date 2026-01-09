@@ -1919,7 +1919,7 @@ main {
 
 .slots-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  grid-template-columns: repeat(6, 1fr);
   gap: 20px;
   max-width: 100%;
 }
@@ -1931,8 +1931,6 @@ main {
   cursor: pointer;
   transition: all 0.3s;
   border: 1px solid var(--border-color);
-  max-width: 220px;
-  width: 100%;
 }
 
 .slot-card:hover {
