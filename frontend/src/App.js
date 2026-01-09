@@ -1466,39 +1466,6 @@ const AdminDashboard = () => {
             <button className="btn-save-rtp" onClick={updateRTP}>Сохранить RTP</button>
           </div>
         )}
-                <div className="stat-value">{stats.withdrawals.today?.toFixed(2)} ₽</div>
-              </div>
-              <div className="stat-card">
-                <h4>Ожидающие выводы</h4>
-                <div className="stat-value">{stats.withdrawals.pending_count} ({stats.withdrawals.pending_sum?.toFixed(2)} ₽)</div>
-              </div>
-              <div className="stat-card">
-                <h4>Пользователей сегодня</h4>
-                <div className="stat-value">{stats.users.today}</div>
-              </div>
-              <div className="stat-card">
-                <h4>Всего пользователей</h4>
-                <div className="stat-value">{stats.users.all}</div>
-              </div>
-            </div>
-
-            <h3>Банк игр</h3>
-            <div className="bank-stats">
-              <div className="bank-item">
-                <span>Dice</span>
-                <strong>{stats.bank?.dice?.toFixed(2)} ₽</strong>
-              </div>
-              <div className="bank-item">
-                <span>Mines</span>
-                <strong>{stats.bank?.mines?.toFixed(2)} ₽</strong>
-              </div>
-              <div className="bank-item">
-                <span>Bubbles</span>
-                <strong>{stats.bank?.bubbles?.toFixed(2)} ₽</strong>
-              </div>
-            </div>
-          </div>
-        )}
 
         {tab === 'users' && (
           <div className="admin-users" data-testid="admin-users">
