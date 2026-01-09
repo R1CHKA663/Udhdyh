@@ -827,15 +827,13 @@ const WheelGame = () => {
 
 // Slots Page
 const SlotsPage = () => {
-  const { user, updateBalance } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const [slots, setSlots] = useState([]);
   const [providers, setProviders] = useState([]);
   const [search, setSearch] = useState('');
   const [selectedProvider, setSelectedProvider] = useState('');
   const [loading, setLoading] = useState(true);
-  const [gameUrl, setGameUrl] = useState(null);
-  const [gameName, setGameName] = useState('');
 
   useEffect(() => {
     fetchSlots();
@@ -862,46 +860,14 @@ const SlotsPage = () => {
     
     try {
       const res = await api.get(`/slots/game/${slotId}`);
-      if (res.data.success) {
-        setGameUrl(res.data.url);
-        setGameName(res.data.name || slotName);
+      if (res.data.success && res.data.url) {
+        // Open slot in new window/tab
+        window.open(res.data.url, '_blank', 'width=1200,height=800');
       }
     } catch (e) {
       toast.error(e.response?.data?.detail || 'Ошибка загрузки игры');
     }
   };
-
-  const closeSlot = () => {
-    setGameUrl(null);
-    setGameName('');
-    // Refresh balance after closing slot
-    window.location.reload();
-  };
-
-  // Slot game iframe view
-  if (gameUrl) {
-    return (
-      <div className="page slot-iframe-page" data-testid="slot-iframe-page">
-        <div className="slot-iframe-header">
-          <div className="slot-iframe-info">
-            <h3><i className="fa-solid fa-gamepad"></i> {gameName}</h3>
-          </div>
-          <button className="btn-close-slot" onClick={closeSlot} data-testid="close-slot-btn">
-            <i className="fa-solid fa-times"></i> Закрыть
-          </button>
-        </div>
-        <div className="slot-iframe-container">
-          <iframe 
-            src={gameUrl} 
-            title={gameName}
-            className="slot-iframe"
-            allowFullScreen
-            allow="autoplay; fullscreen"
-          />
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="page slots-page" data-testid="slots-page">
