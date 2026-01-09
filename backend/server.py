@@ -1131,6 +1131,21 @@ async def get_recent_history(limit: int = Query(default=10, le=50)):
                 "created_at": g["created_at"]
             })
     
+    # Get recent wheel games
+    wheel_games = await db.wheel_games.find({}, {"_id": 0}).sort("created_at", -1).limit(limit).to_list(limit)
+    for g in wheel_games:
+        user = await db.users.find_one({"id": g["user_id"]}, {"_id": 0, "name": 1})
+        if user:
+            history.append({
+                "game": "wheel",
+                "name": user["name"],
+                "bet": g["bet"],
+                "coefficient": g["coef"],
+                "win": g["win"],
+                "status": "win" if g["win"] > 0 else "lose",
+                "created_at": g["created_at"]
+            })
+    
     # Sort by time and limit
     history.sort(key=lambda x: x["created_at"], reverse=True)
     return {"success": True, "history": history[:limit]}
