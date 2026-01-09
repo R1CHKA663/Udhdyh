@@ -568,6 +568,141 @@ async def crash_bet(request: Request, user: dict = Depends(get_current_user)):
         "win": win, "balance": user_data["balance"]
     }
 
+# ================== GAMES - X100 ==================
+
+X100_WHEEL = [
+    2, 3, 2, 15, 2, 3, 2, 20, 2, 15, 2, 3, 2, 3, 2, 15, 2, 3, 10, 3, 2, 10, 2, 3, 2,
+    100,  # Jackpot position
+    2, 3, 2, 10, 2, 3, 2, 3, 2, 15, 2, 3, 2, 3, 2, 20, 2, 3, 2, 10, 2, 3, 2, 10,
+    2, 3, 2, 15, 2, 3, 2, 3, 2, 10, 20, 3, 2, 3, 2, 15, 2, 10, 2, 3, 2, 20, 2, 3, 2,
+    15, 2, 3, 2, 10, 2, 3, 2, 3, 2, 10, 2, 3, 2, 3, 2, 10, 2, 3, 2, 3, 2, 3, 2
+]
+
+@api_router.post("/games/x100/play")
+async def x100_play(request: Request, user: dict = Depends(get_current_user)):
+    data = await request.json()
+    if user.get("is_ban"):
+        raise HTTPException(status_code=403, detail="Ваш аккаунт заблокирован")
+    
+    bet = min(float(data.get("bet", 10)), user["balance"], MAX_BET)
+    selected_coef = int(data.get("coef", 2))  # Player selects coefficient: 2, 3, 10, 15, 20, or 100
+    
+    valid_coefs = [2, 3, 10, 15, 20, 100]
+    if selected_coef not in valid_coefs:
+        raise HTTPException(status_code=400, detail="Неверный множитель")
+    
+    if bet < 1:
+        raise HTTPException(status_code=400, detail="Недостаточно средств")
+    
+    settings = await get_settings()
+    rtp = settings.get("x100_rtp", 97)
+    
+    # Select random position on wheel
+    position = random.randint(0, len(X100_WHEEL) - 1)
+    result_coef = X100_WHEEL[position]
+    
+    # Check if player wins (landed on their selected coefficient)
+    is_win = result_coef == selected_coef
+    
+    # Apply RTP - if player about to win, possibly change outcome
+    if is_win and not user.get("is_youtuber"):
+        potential_win = bet * selected_coef
+        if not should_player_win(rtp, user):
+            # Find a losing position
+            losing_positions = [i for i, c in enumerate(X100_WHEEL) if c != selected_coef]
+            position = random.choice(losing_positions)
+            result_coef = X100_WHEEL[position]
+            is_win = False
+    
+    if is_win:
+        win = round_money(bet * selected_coef)
+        balance_change = win - bet
+    else:
+        win = 0
+        balance_change = -bet
+        await calculate_raceback(user["id"], bet)
+    
+    await db.users.update_one({"id": user["id"]}, {"$inc": {"balance": balance_change, "wager": -bet}})
+    
+    # Calculate rotation angle for animation
+    segment_angle = 360 / len(X100_WHEEL)
+    rotation = position * segment_angle + (360 * 5)  # 5 full rotations + final position
+    
+    user_data = await db.users.find_one({"id": user["id"]}, {"_id": 0})
+    return {
+        "success": True, "status": "win" if is_win else "lose",
+        "selected_coef": selected_coef, "result_coef": result_coef,
+        "position": position, "rotation": rotation,
+        "win": win, "balance": user_data["balance"]
+    }
+
+# ================== GAMES - KENO ==================
+
+@api_router.post("/games/keno/play")
+async def keno_play(request: Request, user: dict = Depends(get_current_user)):
+    data = await request.json()
+    if user.get("is_ban"):
+        raise HTTPException(status_code=403, detail="Ваш аккаунт заблокирован")
+    
+    bet = min(float(data.get("bet", 10)), user["balance"], MAX_BET)
+    selected_numbers = data.get("numbers", [])  # Player selects 1-10 numbers from 1-40
+    
+    if not selected_numbers or len(selected_numbers) < 1 or len(selected_numbers) > 10:
+        raise HTTPException(status_code=400, detail="Выберите от 1 до 10 чисел")
+    
+    if any(n < 1 or n > 40 for n in selected_numbers):
+        raise HTTPException(status_code=400, detail="Числа должны быть от 1 до 40")
+    
+    if bet < 1:
+        raise HTTPException(status_code=400, detail="Недостаточно средств")
+    
+    settings = await get_settings()
+    rtp = settings.get("keno_rtp", 97)
+    
+    # Draw 10 random numbers
+    drawn_numbers = random.sample(range(1, 41), 10)
+    
+    # Count matches
+    matches = len(set(selected_numbers) & set(drawn_numbers))
+    
+    # Keno payout table based on selections and matches
+    payouts = {
+        1: {1: 3},
+        2: {2: 9},
+        3: {2: 2, 3: 25},
+        4: {2: 1, 3: 5, 4: 50},
+        5: {3: 3, 4: 15, 5: 100},
+        6: {3: 2, 4: 5, 5: 30, 6: 200},
+        7: {4: 3, 5: 10, 6: 50, 7: 500},
+        8: {4: 2, 5: 5, 6: 20, 7: 100, 8: 1000},
+        9: {5: 3, 6: 10, 7: 30, 8: 300, 9: 2000},
+        10: {5: 2, 6: 5, 7: 15, 8: 100, 9: 500, 10: 5000}
+    }
+    
+    multiplier = payouts.get(len(selected_numbers), {}).get(matches, 0)
+    win = round_money(bet * multiplier) if multiplier > 0 else 0
+    
+    # Apply RTP adjustment
+    if win > 0 and not user.get("is_youtuber") and not should_player_win(rtp, user):
+        # Reduce matches to lose
+        drawn_numbers = [n for n in range(1, 41) if n not in selected_numbers][:10]
+        matches = 0
+        win = 0
+    
+    balance_change = win - bet if win > 0 else -bet
+    await db.users.update_one({"id": user["id"]}, {"$inc": {"balance": balance_change, "wager": -bet}})
+    
+    if win == 0:
+        await calculate_raceback(user["id"], bet)
+    
+    user_data = await db.users.find_one({"id": user["id"]}, {"_id": 0})
+    return {
+        "success": True, "status": "win" if win > 0 else "lose",
+        "selected": selected_numbers, "drawn": drawn_numbers,
+        "matches": matches, "multiplier": multiplier,
+        "win": win, "balance": user_data["balance"]
+    }
+
 # ================== SLOTS ==================
 
 @api_router.get("/slots")
