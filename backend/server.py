@@ -92,7 +92,8 @@ async def get_settings():
     if not settings:
         settings = {
             "id": "main", "raceback_percent": 10, "ref_percent": 50, "min_withdraw": 100,
-            "dice_rtp": 97, "mines_rtp": 97, "bubbles_rtp": 97, "wheel_rtp": 97, "slots_rtp": 97, "crash_rtp": 97,
+            "dice_rtp": 97, "mines_rtp": 97, "bubbles_rtp": 97, "wheel_rtp": 97, 
+            "slots_rtp": 97, "crash_rtp": 97, "x100_rtp": 97, "keno_rtp": 97,
             "dice_bank": 10000, "mines_bank": 10000, "bubbles_bank": 10000, "wheel_bank": 10000
         }
         await db.settings.insert_one(settings)
