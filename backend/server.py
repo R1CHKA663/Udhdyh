@@ -792,76 +792,219 @@ async def play_slot(slot_id: str, request: Request, user: dict = Depends(get_cur
 
 # ================== SLOTS CALLBACK (for real slot providers) ==================
 
+ALLOWED_CALLBACK_IPS = ['62.112.11.44']  # Slots provider IP
+
 @api_router.post("/slots/callback")
 async def slots_callback(request: Request):
-    """Handle callbacks from slot providers"""
+    """Handle callbacks from slot providers - full implementation"""
+    # Optional IP check (uncomment in production)
+    # client_ip = request.headers.get("x-forwarded-for", request.client.host if request.client else "")
+    # if client_ip not in ALLOWED_CALLBACK_IPS:
+    #     logger.warning(f"Unauthorized callback attempt from {client_ip}")
+    #     return {"success": False, "error": "Unauthorized"}
+    
     data = await request.json()
     api = data.get("api", "")
     request_data = data.get("data", {})
     
-    logger.info(f"Slots callback: {api}")
+    logger.info(f"Slots callback: {api}, data: {request_data}")
     
     try:
         if api == "do-auth-user-ingame":
-            user = await db.users.find_one({"id": request_data.get("user_id"), "api_token": request_data.get("user_game_token")}, {"_id": 0})
+            # Authentication - validate user and generate game token
+            user = await db.users.find_one({
+                "id": request_data.get("user_id"), 
+                "api_token": request_data.get("user_auth_token")
+            }, {"_id": 0})
+            
             if not user:
-                raise Exception("User not found")
+                raise Exception("User not found or invalid auth_token")
+            
+            # Generate new game token
+            game_token = secrets.token_hex(16)
+            await db.users.update_one(
+                {"id": user["id"]}, 
+                {"$set": {"game_token": game_token, "game_token_date": datetime.now(timezone.utc).isoformat()}}
+            )
+            
+            operator_id = YT_OPERATOR_ID if user.get("is_youtuber") else OPERATOR_ID
             
             return {
                 "success": True, "api": api,
                 "answer": {
-                    "operator_id": OPERATOR_ID, "user_id": str(user["id"]), "user_nickname": user["name"],
-                    "balance": str(user["balance"]), "bonus_balance": "0", "currency": "RUB",
-                    "error_code": 0, "error_description": "ok"
+                    "operator_id": operator_id,
+                    "user_id": str(user["id"]),
+                    "user_nickname": user.get("name", user.get("username", "Player")),
+                    "balance": str(user["balance"]),
+                    "bonus_balance": "0",
+                    "currency": "RUB",
+                    "game_token": game_token,
+                    "auth_token": request_data.get("user_auth_token"),
+                    "error_code": 0,
+                    "error_description": "ok",
+                    "timestamp": str(int(datetime.now(timezone.utc).timestamp()))
                 }
             }
         
         elif api == "do-debit-user-ingame":
-            user = await db.users.find_one({"id": request_data.get("user_id")}, {"_id": 0})
+            # Debit - deduct balance when player makes a bet
+            user = await db.users.find_one({
+                "id": request_data.get("user_id"),
+                "game_token": request_data.get("user_game_token")
+            }, {"_id": 0})
+            
             if not user:
-                raise Exception("User not found")
+                raise Exception("User not found or invalid game_token")
             
             debit_amount = float(request_data.get("debit_amount", 0))
-            if user["balance"] < debit_amount:
-                raise Exception("Not enough balance")
             
-            await db.users.update_one({"id": user["id"]}, {"$inc": {"balance": -debit_amount}})
-            user = await db.users.find_one({"id": user["id"]}, {"_id": 0})
+            if user["balance"] < debit_amount:
+                raise Exception("Insufficient balance")
+            
+            await db.users.update_one(
+                {"id": user["id"]}, 
+                {"$inc": {"balance": -debit_amount, "wager": -debit_amount}}
+            )
+            
+            # Log transaction
+            await db.slot_transactions.insert_one({
+                "id": str(uuid.uuid4()),
+                "transaction_id": request_data.get("transaction_id"),
+                "user_id": user["id"],
+                "type": "debit",
+                "amount": debit_amount,
+                "game_id": request_data.get("game_id", ""),
+                "created_at": datetime.now(timezone.utc).isoformat()
+            })
+            
+            user_updated = await db.users.find_one({"id": user["id"]}, {"_id": 0})
+            operator_id = YT_OPERATOR_ID if user.get("is_youtuber") else OPERATOR_ID
             
             return {
                 "success": True, "api": api,
                 "answer": {
-                    "operator_id": OPERATOR_ID, "transaction_id": request_data.get("transaction_id"),
-                    "user_id": str(user["id"]), "user_nickname": user["name"],
-                    "balance": str(user["balance"]), "bonus_balance": "0", "currency": "RUB",
-                    "error_code": 0, "error_description": "ok"
+                    "operator_id": operator_id,
+                    "transaction_id": request_data.get("transaction_id"),
+                    "user_id": str(user["id"]),
+                    "user_nickname": user.get("name", "Player"),
+                    "balance": str(user_updated["balance"]),
+                    "bonus_balance": "0",
+                    "bonus_amount": "0",
+                    "game_token": user.get("game_token", ""),
+                    "currency": "RUB",
+                    "error_code": 0,
+                    "error_description": "ok",
+                    "timestamp": str(int(datetime.now(timezone.utc).timestamp()))
                 }
             }
         
         elif api == "do-credit-user-ingame":
-            user = await db.users.find_one({"id": request_data.get("user_id")}, {"_id": 0})
+            # Credit - add winnings to user balance
+            user = await db.users.find_one({
+                "id": request_data.get("user_id"),
+                "game_token": request_data.get("user_game_token")
+            }, {"_id": 0})
+            
             if not user:
-                raise Exception("User not found")
+                raise Exception("User not found or invalid game_token")
             
             credit_amount = float(request_data.get("credit_amount", 0))
-            await db.users.update_one({"id": user["id"]}, {"$inc": {"balance": credit_amount}})
-            user = await db.users.find_one({"id": user["id"]}, {"_id": 0})
+            
+            if credit_amount > 0:
+                await db.users.update_one(
+                    {"id": user["id"]}, 
+                    {"$inc": {"balance": credit_amount}}
+                )
+                
+                # Log transaction
+                await db.slot_transactions.insert_one({
+                    "id": str(uuid.uuid4()),
+                    "transaction_id": request_data.get("transaction_id"),
+                    "user_id": user["id"],
+                    "type": "credit",
+                    "amount": credit_amount,
+                    "game_id": request_data.get("game_id", ""),
+                    "created_at": datetime.now(timezone.utc).isoformat()
+                })
+            
+            user_updated = await db.users.find_one({"id": user["id"]}, {"_id": 0})
+            operator_id = YT_OPERATOR_ID if user.get("is_youtuber") else OPERATOR_ID
             
             return {
                 "success": True, "api": api,
                 "answer": {
-                    "operator_id": OPERATOR_ID, "transaction_id": request_data.get("transaction_id"),
-                    "user_id": str(user["id"]), "user_nickname": user["name"],
-                    "balance": str(user["balance"]), "bonus_balance": "0", "currency": "RUB",
-                    "error_code": 0, "error_description": "ok"
+                    "operator_id": operator_id,
+                    "transaction_id": request_data.get("transaction_id"),
+                    "user_id": str(user["id"]),
+                    "user_nickname": user.get("name", "Player"),
+                    "balance": str(user_updated["balance"]),
+                    "bonus_balance": "0",
+                    "bonus_amount": "0",
+                    "game_token": user.get("game_token", ""),
+                    "currency": "RUB",
+                    "error_code": 0,
+                    "error_description": "ok",
+                    "timestamp": str(int(datetime.now(timezone.utc).timestamp()))
+                }
+            }
+        
+        elif api == "do-rollback-user-ingame":
+            # Rollback - reverse a transaction
+            user = await db.users.find_one({"id": request_data.get("user_id")}, {"_id": 0})
+            if not user:
+                raise Exception("User not found")
+            
+            rollback_amount = float(request_data.get("rollback_amount", 0))
+            await db.users.update_one({"id": user["id"]}, {"$inc": {"balance": rollback_amount}})
+            
+            user_updated = await db.users.find_one({"id": user["id"]}, {"_id": 0})
+            
+            return {
+                "success": True, "api": api,
+                "answer": {
+                    "operator_id": OPERATOR_ID,
+                    "transaction_id": request_data.get("transaction_id"),
+                    "user_id": str(user["id"]),
+                    "balance": str(user_updated["balance"]),
+                    "error_code": 0,
+                    "error_description": "ok"
+                }
+            }
+        
+        elif api in ["do-get-features-user-ingame", "do-activate-features-user-ingame", 
+                     "do-update-features-user-ingame", "do-end-features-user-ingame"]:
+            # Features handling (bonus rounds, free spins, etc.)
+            user = await db.users.find_one({"id": request_data.get("user_id")}, {"_id": 0})
+            if not user:
+                raise Exception("User not found")
+            
+            return {
+                "success": True, "api": api,
+                "answer": {
+                    "operator_id": OPERATOR_ID,
+                    "user_id": str(user["id"]),
+                    "balance": str(user["balance"]),
+                    "bonus_balance": "0",
+                    "error_code": 0,
+                    "error_description": "ok",
+                    "timestamp": str(int(datetime.now(timezone.utc).timestamp()))
                 }
             }
         
         else:
+            logger.warning(f"Unknown API call: {api}")
             return {"success": True, "api": api, "answer": {"error_code": 0, "error_description": "ok"}}
     
     except Exception as e:
-        return {"success": True, "api": api, "answer": {"error_code": 1, "error_description": str(e)}}
+        logger.error(f"Slots callback error: {e}")
+        return {
+            "success": True, "api": api,
+            "answer": {
+                "error_code": 1,
+                "error_description": str(e),
+                "timestamp": str(int(datetime.now(timezone.utc).timestamp()))
+            }
+        }
 
 # ================== REFERRAL ==================
 
