@@ -1209,7 +1209,7 @@ const Referral = () => {
   );
 };
 
-// Crash Game with plane animation
+// Crash Game with proper animation
 const CrashGame = () => {
   const { user, updateBalance } = useAuth();
   const navigate = useNavigate();
@@ -1219,218 +1219,164 @@ const CrashGame = () => {
   const [result, setResult] = useState(null);
   const [currentMult, setCurrentMult] = useState(1.0);
   const [crashed, setCrashed] = useState(false);
-  const [gamePhase, setGamePhase] = useState('waiting'); // waiting, betting, flying, crashed
-  const [countdown, setCountdown] = useState(5);
-  const [planePosition, setPlanePosition] = useState({ x: 0, y: 100 });
-  const [bets, setBets] = useState([]);
+  const [gamePhase, setGamePhase] = useState('waiting'); // waiting, flying, crashed
   const [hasBet, setHasBet] = useState(false);
+  const [graphPoints, setGraphPoints] = useState([]);
 
-  // Simulate online game rounds
-  useEffect(() => {
-    const startRound = () => {
-      setGamePhase('betting');
-      setCountdown(5);
-      setCurrentMult(1.0);
-      setCrashed(false);
-      setResult(null);
-      setPlanePosition({ x: 0, y: 100 });
-      setHasBet(false);
-      
-      // Simulate other players betting
-      setBets([
-        { name: 'Player_123', bet: Math.floor(Math.random() * 500) + 10, cashout: null },
-        { name: 'Lucky_777', bet: Math.floor(Math.random() * 300) + 50, cashout: null },
-        { name: 'Winner_x', bet: Math.floor(Math.random() * 200) + 20, cashout: null },
-      ]);
-    };
-    
-    startRound();
-    const interval = setInterval(startRound, 15000);
-    return () => clearInterval(interval);
-  }, []);
-
-  // Countdown timer
-  useEffect(() => {
-    if (gamePhase === 'betting' && countdown > 0) {
-      const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
-      return () => clearTimeout(timer);
-    } else if (gamePhase === 'betting' && countdown === 0) {
-      startFlying();
-    }
-  }, [gamePhase, countdown]);
-
-  const startFlying = () => {
-    setGamePhase('flying');
-    const crashPoint = 1 + Math.random() * 10; // Random crash between 1.0 and 11.0
-    let mult = 1.0;
-    
-    const fly = () => {
-      mult += 0.02 * (1 + mult * 0.05);
-      setCurrentMult(parseFloat(mult.toFixed(2)));
-      
-      // Update plane position
-      const x = Math.min((mult - 1) * 30, 80);
-      const y = Math.max(100 - (mult - 1) * 20, 10);
-      setPlanePosition({ x, y });
-      
-      // Simulate other players cashing out
-      setBets(prev => prev.map(b => {
-        if (!b.cashout && Math.random() < 0.02 && mult > 1.5) {
-          return { ...b, cashout: mult.toFixed(2) };
-        }
-        return b;
-      }));
-      
-      if (mult >= crashPoint) {
-        setCrashed(true);
-        setGamePhase('crashed');
-        
-        // Check if player won
-        if (hasBet && !result) {
-          toast.error(`Crash! x${mult.toFixed(2)}`);
-        }
-        
-        // Start new round after 3 seconds
-        setTimeout(() => {
-          setGamePhase('betting');
-          setCountdown(5);
-          setCurrentMult(1.0);
-          setCrashed(false);
-          setResult(null);
-          setPlanePosition({ x: 0, y: 100 });
-          setHasBet(false);
-          setBets([
-            { name: 'Player_' + Math.floor(Math.random() * 999), bet: Math.floor(Math.random() * 500) + 10, cashout: null },
-            { name: 'Lucky_' + Math.floor(Math.random() * 999), bet: Math.floor(Math.random() * 300) + 50, cashout: null },
-          ]);
-        }, 3000);
-      } else {
-        setTimeout(fly, 50);
-      }
-    };
-    fly();
-  };
-
-  const placeBet = async () => {
+  const play = async () => {
     if (!user) return navigate('/login');
     if (user.balance < bet) return toast.error('Недостаточно средств');
-    if (gamePhase !== 'betting') return toast.error('Дождитесь нового раунда');
     
     setLoading(true);
+    setResult(null);
+    setCrashed(false);
+    setCurrentMult(1.0);
+    setGraphPoints([]);
+    setGamePhase('flying');
+    setHasBet(true);
+    
     try {
       const res = await api.post('/games/crash/bet', { bet, auto_cashout: autoCashout });
+      
       if (res.data.success) {
-        setHasBet(true);
         updateBalance(res.data.balance);
-        setBets(prev => [...prev, { name: user.name || 'Вы', bet, cashout: null, isMe: true }]);
-        toast.success('Ставка принята!');
+        const crashPoint = res.data.crash_point;
+        let mult = 1.0;
+        let points = [];
+        
+        const animate = () => {
+          mult += 0.02 * (1 + mult * 0.03);
+          const newMult = parseFloat(mult.toFixed(2));
+          setCurrentMult(newMult);
+          
+          // Add point to graph
+          points.push(newMult);
+          setGraphPoints([...points]);
+          
+          if (mult >= crashPoint) {
+            setCrashed(true);
+            setGamePhase('crashed');
+            setHasBet(false);
+            
+            if (res.data.status === 'win') {
+              setResult({ status: 'win', win: res.data.win });
+              toast.success(`Успели! +${res.data.win?.toFixed(2)}₽`);
+            } else {
+              setResult({ status: 'lose' });
+              toast.error(`Crash на x${newMult}!`);
+            }
+            setLoading(false);
+          } else if (mult >= autoCashout && res.data.status === 'win') {
+            setGamePhase('crashed');
+            setHasBet(false);
+            setResult({ status: 'win', win: res.data.win });
+            toast.success(`Автовывод! +${res.data.win?.toFixed(2)}₽`);
+            setLoading(false);
+          } else {
+            setTimeout(animate, 50);
+          }
+        };
+        animate();
       }
     } catch (e) {
       toast.error(e.response?.data?.detail || 'Ошибка');
+      setLoading(false);
+      setGamePhase('waiting');
+      setHasBet(false);
     }
-    setLoading(false);
   };
 
   const cashOut = async () => {
-    if (!hasBet || result || gamePhase !== 'flying') return;
+    if (!hasBet || gamePhase !== 'flying') return;
     
-    try {
-      const win = bet * currentMult;
-      setResult({ status: 'win', win, multiplier: currentMult });
-      updateBalance(user.balance + win - bet);
-      setBets(prev => prev.map(b => b.isMe ? { ...b, cashout: currentMult.toFixed(2) } : b));
-      toast.success(`Успели! +${win.toFixed(2)}₽ (x${currentMult.toFixed(2)})`);
-    } catch (e) {
-      toast.error('Ошибка');
-    }
+    const win = bet * currentMult;
+    setResult({ status: 'win', win });
+    setGamePhase('crashed');
+    setHasBet(false);
+    setLoading(false);
+    updateBalance(user.balance + win - bet);
+    toast.success(`Забрали! +${win.toFixed(2)}₽ (x${currentMult.toFixed(2)})`);
   };
 
   return (
     <div className="page game-page crash-page" data-testid="crash-page">
-      <div className="game-container crash-container">
+      <div className="game-container">
         <div className="game-board crash-board" data-testid="crash-board">
           <div className={`crash-display ${crashed ? 'crashed' : ''}`}>
-            <div className="crash-graph">
-              {/* Plane animation */}
-              <div 
-                className={`crash-plane ${crashed ? 'exploded' : ''}`}
-                style={{ 
-                  left: `${planePosition.x}%`, 
-                  bottom: `${planePosition.y}%`,
-                  transform: `rotate(-${Math.min((currentMult - 1) * 5, 45)}deg)`
-                }}
-              >
-                {crashed ? '💥' : '✈️'}
-              </div>
-              {/* Trail */}
-              <svg className="crash-trail" viewBox="0 0 100 100" preserveAspectRatio="none">
-                <path 
-                  d={`M 0 100 Q ${planePosition.x / 2} ${100 - planePosition.y / 2} ${planePosition.x} ${100 - planePosition.y}`}
-                  fill="none"
-                  stroke="rgba(16, 185, 129, 0.5)"
-                  strokeWidth="2"
-                />
+            {/* Graph */}
+            <div className="crash-graph-container">
+              <svg className="crash-graph-svg" viewBox="0 0 100 100" preserveAspectRatio="none">
+                {/* Grid lines */}
+                <line x1="0" y1="75" x2="100" y2="75" stroke="rgba(255,255,255,0.1)" strokeWidth="0.5"/>
+                <line x1="0" y1="50" x2="100" y2="50" stroke="rgba(255,255,255,0.1)" strokeWidth="0.5"/>
+                <line x1="0" y1="25" x2="100" y2="25" stroke="rgba(255,255,255,0.1)" strokeWidth="0.5"/>
+                
+                {/* Multiplier curve */}
+                {graphPoints.length > 1 && (
+                  <path
+                    d={`M 0 100 ${graphPoints.map((p, i) => 
+                      `L ${(i / graphPoints.length) * 100} ${100 - Math.min((p - 1) * 15, 95)}`
+                    ).join(' ')}`}
+                    fill="none"
+                    stroke={crashed && result?.status !== 'win' ? '#ef4444' : '#10b981'}
+                    strokeWidth="2"
+                  />
+                )}
+                
+                {/* Fill under curve */}
+                {graphPoints.length > 1 && (
+                  <path
+                    d={`M 0 100 ${graphPoints.map((p, i) => 
+                      `L ${(i / graphPoints.length) * 100} ${100 - Math.min((p - 1) * 15, 95)}`
+                    ).join(' ')} L ${((graphPoints.length - 1) / graphPoints.length) * 100} 100 Z`}
+                    fill={crashed && result?.status !== 'win' ? 'rgba(239, 68, 68, 0.2)' : 'rgba(16, 185, 129, 0.2)'}
+                  />
+                )}
               </svg>
             </div>
-            <div className="crash-multiplier-display">
-              <div className="crash-multiplier">x{currentMult.toFixed(2)}</div>
-              {gamePhase === 'betting' && (
-                <div className="crash-countdown">Ставки: {countdown}с</div>
+            
+            {/* Multiplier display */}
+            <div className="crash-mult-overlay">
+              <div className={`crash-multiplier ${crashed && result?.status !== 'win' ? 'red' : ''}`}>
+                x{currentMult.toFixed(2)}
+              </div>
+              {crashed && result?.status !== 'win' && (
+                <div className="crash-label">CRASHED!</div>
               )}
-              {crashed && <div className="crash-boom">CRASH!</div>}
-              {result && result.status === 'win' && (
-                <div className="crash-win-result">+{result.win.toFixed(2)}₽</div>
+              {result?.status === 'win' && (
+                <div className="crash-win">+{result.win?.toFixed(2)}₽</div>
               )}
-            </div>
-          </div>
-          
-          {/* Live bets */}
-          <div className="crash-bets">
-            <h4>Ставки раунда</h4>
-            <div className="crash-bets-list">
-              {bets.map((b, i) => (
-                <div key={i} className={`crash-bet-item ${b.isMe ? 'my-bet' : ''} ${b.cashout ? 'cashed-out' : ''}`}>
-                  <span className="bet-name">{b.name}</span>
-                  <span className="bet-amount">{b.bet}₽</span>
-                  {b.cashout && <span className="bet-cashout">x{b.cashout}</span>}
-                </div>
-              ))}
             </div>
           </div>
         </div>
         
         <div className="game-controls" data-testid="crash-controls">
-          <h2><i className="fa-solid fa-plane"></i> Crash</h2>
+          <h2><i className="fa-solid fa-chart-line"></i> Crash</h2>
           <div className="control-group">
             <label>Ставка</label>
             <div className="bet-input">
-              <button onClick={() => setBet(Math.max(1, bet / 2))} disabled={hasBet}>½</button>
-              <input type="number" value={bet} onChange={e => setBet(Math.max(1, +e.target.value))} disabled={hasBet} data-testid="crash-bet-input" />
-              <button onClick={() => setBet(Math.min(user?.balance || 1000, bet * 2))} disabled={hasBet}>×2</button>
+              <button onClick={() => setBet(Math.max(1, bet / 2))} disabled={loading}>½</button>
+              <input type="number" value={bet} onChange={e => setBet(Math.max(1, +e.target.value))} disabled={loading} data-testid="crash-bet-input" />
+              <button onClick={() => setBet(Math.min(user?.balance || 1000, bet * 2))} disabled={loading}>×2</button>
             </div>
           </div>
           <div className="control-group">
             <label>Автовывод: x{autoCashout.toFixed(2)}</label>
-            <input type="range" min="1.1" max="100" step="0.1" value={autoCashout} onChange={e => setAutoCashout(+e.target.value)} disabled={hasBet} />
+            <input type="range" min="1.1" max="100" step="0.1" value={autoCashout} onChange={e => setAutoCashout(+e.target.value)} disabled={loading} />
           </div>
           <div className="quick-targets">
             {[1.5, 2, 3, 5, 10].map(t => (
-              <button key={t} onClick={() => setAutoCashout(t)} className={autoCashout === t ? 'active' : ''} disabled={hasBet}>x{t}</button>
+              <button key={t} onClick={() => setAutoCashout(t)} className={autoCashout === t ? 'active' : ''} disabled={loading}>x{t}</button>
             ))}
           </div>
           
-          {gamePhase === 'betting' && !hasBet ? (
-            <button className="btn-start btn-bet" onClick={placeBet} disabled={loading} data-testid="crash-bet-btn">
-              {loading ? <i className="fa-solid fa-spinner fa-spin"></i> : `Ставка ${bet}₽`}
-            </button>
-          ) : gamePhase === 'flying' && hasBet && !result ? (
+          {gamePhase === 'flying' && hasBet ? (
             <button className="btn-start btn-cashout" onClick={cashOut} data-testid="crash-cashout-btn">
               Забрать {(bet * currentMult).toFixed(2)}₽
             </button>
           ) : (
-            <button className="btn-start" disabled>
-              {gamePhase === 'betting' ? (hasBet ? 'Ставка принята' : `Ставки: ${countdown}с`) : 
-               crashed ? 'Crash!' : 'Ожидание...'}
+            <button className="btn-start" onClick={play} disabled={loading} data-testid="crash-play-btn">
+              {loading ? <><i className="fa-solid fa-spinner fa-spin"></i> Летим...</> : `Играть ${bet}₽`}
             </button>
           )}
         </div>
