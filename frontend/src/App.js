@@ -1256,6 +1256,326 @@ const Referral = () => {
   );
 };
 
+// Crash Game
+const CrashGame = () => {
+  const { user, updateBalance } = useAuth();
+  const navigate = useNavigate();
+  const [bet, setBet] = useState(10);
+  const [autoCashout, setAutoCashout] = useState(2.0);
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState(null);
+  const [currentMult, setCurrentMult] = useState(1.0);
+  const [crashed, setCrashed] = useState(false);
+
+  const play = async () => {
+    if (!user) return navigate('/login');
+    if (user.balance < bet) return toast.error('Недостаточно средств');
+    
+    setLoading(true);
+    setResult(null);
+    setCrashed(false);
+    setCurrentMult(1.0);
+    
+    try {
+      const res = await api.post('/games/crash/bet', { bet, auto_cashout: autoCashout });
+      
+      if (res.data.success) {
+        // Animate multiplier growth
+        const crashPoint = res.data.crash_point;
+        const increment = 0.01;
+        let mult = 1.0;
+        
+        const animate = () => {
+          mult += increment * (1 + mult * 0.1);
+          setCurrentMult(parseFloat(mult.toFixed(2)));
+          
+          if (mult >= crashPoint) {
+            setCrashed(true);
+            setResult(res.data);
+            updateBalance(res.data.balance);
+            if (res.data.status === 'win') {
+              toast.success(`Успели! +${res.data.win?.toFixed(2)}₽`);
+            } else {
+              toast.error(`Лопнул на x${crashPoint}`);
+            }
+            setLoading(false);
+          } else if (mult >= autoCashout && res.data.status === 'win') {
+            setCrashed(false);
+            setResult(res.data);
+            updateBalance(res.data.balance);
+            toast.success(`Успели! +${res.data.win?.toFixed(2)}₽`);
+            setLoading(false);
+          } else {
+            setTimeout(animate, 50);
+          }
+        };
+        animate();
+      }
+    } catch (e) {
+      toast.error(e.response?.data?.detail || 'Ошибка');
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="page game-page crash-page" data-testid="crash-page">
+      <div className="game-container">
+        <div className="game-board crash-board" data-testid="crash-board">
+          <div className={`crash-display ${crashed ? 'crashed' : ''}`}>
+            <div className="crash-multiplier">x{currentMult.toFixed(2)}</div>
+            {result && (
+              <div className={`crash-result ${result.status}`}>
+                {result.status === 'win' ? `+${result.win?.toFixed(2)}₽` : 'CRASH!'}
+              </div>
+            )}
+          </div>
+        </div>
+        <div className="game-controls" data-testid="crash-controls">
+          <h2><i className="fa-solid fa-rocket"></i> Crash</h2>
+          <div className="control-group">
+            <label>Ставка</label>
+            <div className="bet-input">
+              <button onClick={() => setBet(Math.max(1, bet / 2))}>½</button>
+              <input type="number" value={bet} onChange={e => setBet(Math.max(1, +e.target.value))} data-testid="crash-bet-input" />
+              <button onClick={() => setBet(Math.min(user?.balance || 1000, bet * 2))}>×2</button>
+            </div>
+          </div>
+          <div className="control-group">
+            <label>Автовывод: x{autoCashout.toFixed(2)}</label>
+            <input type="range" min="1.1" max="100" step="0.1" value={autoCashout} onChange={e => setAutoCashout(+e.target.value)} />
+          </div>
+          <div className="quick-targets">
+            {[1.5, 2, 3, 5, 10].map(t => (
+              <button key={t} onClick={() => setAutoCashout(t)} className={autoCashout === t ? 'active' : ''}>x{t}</button>
+            ))}
+          </div>
+          <button className="btn-start" onClick={play} disabled={loading} data-testid="crash-play-btn">
+            {loading ? <i className="fa-solid fa-spinner fa-spin"></i> : 'Играть'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// X100 Game
+const X100Game = () => {
+  const { user, updateBalance } = useAuth();
+  const navigate = useNavigate();
+  const [bet, setBet] = useState(10);
+  const [selectedCoef, setSelectedCoef] = useState(2);
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState(null);
+  const [spinning, setSpinning] = useState(false);
+  const [rotation, setRotation] = useState(0);
+
+  const coefficients = [2, 3, 10, 15, 20, 100];
+  const colors = { 2: '#4ade80', 3: '#60a5fa', 10: '#f472b6', 15: '#fbbf24', 20: '#a78bfa', 100: '#ef4444' };
+
+  const play = async () => {
+    if (!user) return navigate('/login');
+    if (user.balance < bet) return toast.error('Недостаточно средств');
+    
+    setLoading(true);
+    setSpinning(true);
+    setResult(null);
+    
+    try {
+      const res = await api.post('/games/x100/play', { bet, coef: selectedCoef });
+      
+      if (res.data.success) {
+        setRotation(res.data.rotation);
+        
+        setTimeout(() => {
+          setSpinning(false);
+          setResult(res.data);
+          updateBalance(res.data.balance);
+          
+          if (res.data.status === 'win') {
+            toast.success(`Победа! +${res.data.win?.toFixed(2)}₽ (x${res.data.result_coef})`);
+          } else {
+            toast.error(`Выпало x${res.data.result_coef}`);
+          }
+          setLoading(false);
+        }, 4000);
+      }
+    } catch (e) {
+      setSpinning(false);
+      toast.error(e.response?.data?.detail || 'Ошибка');
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="page game-page x100-page" data-testid="x100-page">
+      <div className="game-container">
+        <div className="game-board x100-board" data-testid="x100-board">
+          <div className="x100-wheel-container">
+            <div className="x100-wheel" style={{ transform: `rotate(${rotation}deg)` }}>
+              {Array(100).fill(null).map((_, i) => {
+                const wheelCoefs = [2, 3, 2, 15, 2, 3, 2, 20, 2, 15, 2, 3, 2, 3, 2, 15, 2, 3, 10, 3, 2, 10, 2, 3, 2, 100];
+                const c = wheelCoefs[i % wheelCoefs.length];
+                return (
+                  <div key={i} className="x100-segment" style={{ 
+                    transform: `rotate(${i * 3.6}deg)`,
+                    backgroundColor: colors[c]
+                  }} />
+                );
+              })}
+            </div>
+            <div className="x100-pointer"></div>
+            <div className="x100-center">
+              {result ? (
+                <div className={`x100-result ${result.status}`}>
+                  <div className="x100-result-coef">x{result.result_coef}</div>
+                  <div className="x100-result-win">{result.win > 0 ? `+${result.win?.toFixed(2)}₽` : '0₽'}</div>
+                </div>
+              ) : (
+                <div className="x100-logo">x100</div>
+              )}
+            </div>
+          </div>
+        </div>
+        <div className="game-controls" data-testid="x100-controls">
+          <h2><i className="fa-solid fa-circle-notch"></i> X100</h2>
+          <div className="control-group">
+            <label>Выберите множитель</label>
+            <div className="x100-coefs">
+              {coefficients.map(c => (
+                <button 
+                  key={c} 
+                  className={`x100-coef-btn ${selectedCoef === c ? 'active' : ''}`}
+                  onClick={() => setSelectedCoef(c)}
+                  style={{ backgroundColor: colors[c] }}
+                  disabled={loading}
+                >
+                  x{c}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="control-group">
+            <label>Ставка</label>
+            <div className="bet-input">
+              <button onClick={() => setBet(Math.max(1, bet / 2))}>½</button>
+              <input type="number" value={bet} onChange={e => setBet(Math.max(1, +e.target.value))} data-testid="x100-bet-input" />
+              <button onClick={() => setBet(Math.min(user?.balance || 1000, bet * 2))}>×2</button>
+            </div>
+          </div>
+          <div className="potential-win">
+            Возможный выигрыш: <strong>{(bet * selectedCoef).toFixed(2)} ₽</strong>
+          </div>
+          <button className="btn-start" onClick={play} disabled={loading} data-testid="x100-play-btn">
+            {loading ? (spinning ? <><i className="fa-solid fa-circle-notch fa-spin"></i> Крутится...</> : <i className="fa-solid fa-spinner fa-spin"></i>) : 'Крутить'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Policy Page
+const PolicyPage = () => (
+  <div className="page legal-page" data-testid="policy-page">
+    <div className="legal-content">
+      <h1><i className="fa-solid fa-shield-halved"></i> Политика конфиденциальности</h1>
+      
+      <section>
+        <h3>1. Какая информация подлежит сбору</h3>
+        <p>1.1. Сбору подлежат только сведения, обеспечивающие возможность поддержки обратной связи с пользователем.</p>
+        <p>1.2. Некоторые действия пользователей автоматически сохраняются в журналах сервера:</p>
+        <p>1.2.1. IP-адрес, данные о типе браузера;</p>
+        <p>1.2.2. Надстройках, времени запроса и т. д.</p>
+      </section>
+      
+      <section>
+        <h3>2. Как используется полученная информация</h3>
+        <p>2.1. Сведения, предоставленные пользователем, используются для связи с ним, в том числе для направления уведомлений.</p>
+      </section>
+      
+      <section>
+        <h3>3. Управление личными данными</h3>
+        <p>3.1. Личные данные доступны для просмотра, изменения и удаления в личном кабинете пользователя.</p>
+        <p>3.2. В целях предотвращения случайного удаления или повреждения данных информация хранится в резервных копиях в течение 7 дней и может быть восстановлена по запросу пользователя.</p>
+      </section>
+      
+      <section>
+        <h3>4. Предоставление данных третьим лицам</h3>
+        <p>4.1. Личные данные пользователей могут быть переданы лицам, не связанным с настоящим сайтом, если это необходимо:</p>
+        <p>4.1.1. Для соблюдения закона, нормативно-правового акта, исполнения решения суда;</p>
+        <p>4.1.2. Для выявления или воспрепятствования мошенничеству;</p>
+        <p>4.1.3. Для устранения технических неисправностей в работе сайта;</p>
+        <p>4.1.4. Для предоставления информации на основании запроса уполномоченных государственных органов.</p>
+      </section>
+      
+      <section>
+        <h3>5. Безопасность данных</h3>
+        <p>5.1. Администрация сайта принимает все меры для защиты данных пользователей от несанкционированного доступа.</p>
+      </section>
+      
+      <section>
+        <h3>6. Изменения</h3>
+        <p>6.1. Обновления политики конфиденциальности публикуются на данной странице.</p>
+      </section>
+    </div>
+  </div>
+);
+
+// Terms Page
+const TermsPage = () => (
+  <div className="page legal-page" data-testid="terms-page">
+    <div className="legal-content">
+      <h1><i className="fa-solid fa-file-contract"></i> Пользовательское соглашение</h1>
+      
+      <div className="legal-warning">
+        <i className="fa-solid fa-exclamation-triangle"></i>
+        Если Вы не согласны с условиями настоящего Пользовательского Соглашения, не авторизуйтесь на Сайте EASY MONEY и не используйте сервисы данного Сайта.
+      </div>
+      
+      <section>
+        <h3>1. Термины и определения</h3>
+        <p>1.1.1 <strong>Сайт</strong> - совокупность информации, текстов, графических элементов, дизайна, изображений и иных результатов интеллектуальной деятельности, доступных по адресу EASY MONEY.</p>
+        <p>1.1.2 <strong>Соглашение</strong> – настоящее Пользовательское Соглашение, являющееся Публичной офертой.</p>
+        <p>1.1.3 <strong>Администратор</strong> – лицо, в коммерческом управлении которого находится Сайт.</p>
+        <p>1.1.4 <strong>Пользователь</strong> – лицо, заключившее с Администратором Соглашение путем акцепта настоящей оферты.</p>
+        <p>1.1.5 <strong>Монеты</strong> – виртуальная игровая единица Сайта, используемая для получения Услуги.</p>
+      </section>
+      
+      <section>
+        <h3>2. Предмет соглашения</h3>
+        <p>2.1 Предметом настоящего Соглашения является предложение Администратора получать с использованием сервисов Сайта развлекательно-аттракционные Услуги.</p>
+        <p>2.2 Лицо, акцептовавшее настоящую оферту, становится Пользователем и обязуется использовать Сайт только на условиях настоящего Соглашения.</p>
+        <p>2.3 Пользование Услугами Сайта лицами, не обладающими полной дееспособностью, ЗАПРЕЩЕНО.</p>
+      </section>
+      
+      <section>
+        <h3>3. Услуги сайта</h3>
+        <p>4.1 Услуги, оказываемые на Сайте, являются зрелищно-развлекательными и аттракционными (программа-симулятор).</p>
+        <p>4.2 Неиспользованные виртуальные игровые единицы могут быть возвращены пользователю в соответствии со стоимостью их приобретения.</p>
+      </section>
+      
+      <section>
+        <h3>4. Порядок пользования</h3>
+        <p>5.4 Запрещается использовать автокликер при игре на Сайте. При нарушении вы будете заблокированы.</p>
+        <p>5.12 Пользователям ЗАПРЕЩЕНО регистрировать более 1 учетной записи без предварительного согласования с администрацией.</p>
+        <p>5.17 ЗАПРЕЩЕНО промывать средства через перевод либо переводить с мультиаккаунтов на чистый аккаунт.</p>
+      </section>
+      
+      <section>
+        <h3>5. Оплата</h3>
+        <p>6.1 Цены за монеты на Сайте устанавливаются Администратором и могут быть изменены по решению Администратора.</p>
+        <p>6.6 Все оплаченные Услуги Сайта являются добровольными пожертвованиями со стороны Пользователя.</p>
+      </section>
+      
+      <section>
+        <h3>6. Ответственность</h3>
+        <p>8.1 В случае нарушения Пользователем условий настоящего Соглашения, Администратор вправе заблокировать или удалить с Сайта аккаунт Пользователя.</p>
+        <p>8.2 Администратор не отвечает за работоспособность Сайта и не гарантирует его бесперебойной работы.</p>
+      </section>
+    </div>
+  </div>
+);
+
 // Admin Panel
 const AdminLogin = () => {
   const [password, setPassword] = useState('');
