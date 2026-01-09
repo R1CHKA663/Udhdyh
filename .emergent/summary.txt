@@ -1,0 +1,234 @@
+<analysis>An analysis of the user's request, the AI's actions, and the current state of the project has been completed.
+
+original_problem_statement:
+The user wants to build a full-featured online gaming platform named EASY MONEY. The project started from a PHP/Laravel codebase provided by the user, which needed to be migrated to the platform's supported stack.
+
+**PRODUCT REQUIREMENTS:**
+
+1.  **Project Migration & Setup:**
+    *   Migrate an existing PHP/Laravel/MySQL gaming platform to a FastAPI/React/MongoDB stack.
+    *   Use the original PHP code as a reference for all game logic, algorithms, and features.
+    *   Rebrand the entire site to EASY MONEY, update the footer to copyright 2025, and use the provided logo.
+
+2.  **Authentication:**
+    *   Replace the original VK login with a real Telegram login system.
+    *   Use the provided bot credentials: .
+    *   The temporary domain  has been configured in BotFather.
+
+3.  **Games:**
+    *   Integrate existing games from the original codebase (Mines, Dice, Bubbles).
+    *   Integrate a new Wheel game from a second provided codebase ().
+    *   Integrate a full suite of slots from real providers (e.g., Pragmatic) using the API integration logic found in a third codebase (). This requires a Slots page with a search function and proper balance handling via API callbacks.
+    *   Integrate additional mini-games (Crash, X100, etc.) also found in the  codebase.
+    *   All games must have functional logic, RTP, and animations.
+
+4.  **Admin Panel:**
+    *   The admin panel must be hidden behind a secret URL () and be password-protected.
+    *   **RTP Control:** Allow admins to change the RTP (Return to Player) percentage for all games (from 90% to 99.9%).
+    *   **User Management:** View all users, their registration IP addresses, and edit their stats (e.g., balance).
+    *   **Promo Codes:** Create various types of promo codes (e.g., with/without wager, deposit bonuses).
+    *   **Statistics:** Display comprehensive site statistics.
+
+5.  **Core Gameplay Features:**
+    *   **Referral System:** A 50% commission on a referred user's deposit.
+    *   **Cashback System:** A 10% cashback on the deposit amount after a user loses their entire balance.
+    *   **Anti-Minus System:** Implement the anti-minus logic from the provided  codebase.
+
+6.  **Bug Fixes & Stability:**
+    *   Fix a critical bug where the site crashes when a user places a large bet.
+
+**User's preferred language**: Russian (Русский)
+
+**what currently exists?**
+The project is a full-stack application using FastAPI (Python) for the backend and React for the frontend, with MongoDB as the database. The codebase was created by migrating logic from several PHP/Laravel projects provided by the user.
+
+- **Completed Features:**
+    - Basic site structure with EASY MONEY branding.
+    - Core games implemented: Mines, Dice, Bubbles.
+    - User authentication via a demo mode and a fully functional Telegram Login widget.
+    - A basic, password-protected admin panel.
+- **Partially Implemented/Broken Features:**
+    - A Wheel game has been added but suffers from major UI/CSS bugs.
+    - A Slots page exists, but the integration with the third-party provider is incomplete.
+    - Admin panel UI for RTP and user management has been added but is not fully functional or tested.
+
+**Last working item**:
+    - Last item agent was working: The agent performed a massive, high-risk overwrite of the entire backend () to integrate a multitude of new features at once. This included logic for API-based slots (from ), new mini-games (Crash, X100), RTP settings in the admin panel, and an anti-minus system. This was an attempt to fulfill a large user request that also involved rewriting the frontend () simultaneously.
+    - Status: IN PROGRESS
+    - Agent Testing Done: N
+    - Which testing method agent to use? both
+    - User Testing Done: N
+
+**All Pending/In progress Issue list**:
+  - Issue 1: Massive Untested Rewrite (Priority: P0)
+  - Issue 2: Wheel Game UI is Broken (Priority: P1)
+  - Issue 3: Site Crashes on Large Bet Amounts (Priority: P2)
+  
+  Issues Detail:
+  - Issue 1: 
+     - Attempted fixes: The agent overwrote the entire backend () and frontend () in an attempt to add slots, new mini-games, RTP controls, and other features from the  codebase. This large-scale change is completely untested.
+     - Next debug checklist: 
+        1. Thoroughly test all existing and newly added API endpoints using  to identify crashes and logical errors in . Start with , , and user authentication.
+        2. Test the frontend functionality, especially the new Slots page and the updated Admin panel, to ensure they render and can communicate with the backend.
+        3. Break down the massive code changes into smaller, verifiable chunks and test them incrementally instead of all at once.
+     - Why fix this issue and what will be achieved with the fix? The application is in an unstable, likely broken state. Fixing this is critical to stabilize the project and provide a working base for implementing the remaining features correctly.
+     - Status:  IN PROGRESS
+     - Is recurring issue? N
+     - Should Test frontend/backend/both after fix? both
+     - Blocked on other issue: None. This is the primary blocker.
+  - Issue 2: 
+     - Attempted fixes: The agent made multiple attempts to fix the Wheel game's UI by modifying CSS in  (e.g., adding , ) and adjusting the component structure in . The issues (squashed level-selection buttons, missing pointer arrow, incorrect layout) persist.
+     - Next debug checklist: 
+        1. Inspect the rendered HTML for the  component in the browser to understand why the CSS for  is not being applied correctly.
+        2. Check for CSS specificity conflicts or parent element styles that might be overriding the button layout.
+        3. Verify the image paths for the wheel's center and pointer arrow are correct in  and are being referenced properly in the  component in .
+     - Why fix this issue and what will be achieved with the fix? The Wheel game is a required feature, and it is currently unusable due to a poor user interface.
+     - Status:  IN PROGRESS
+     - Is recurring issue? Y
+     - Should Test frontend/backend/both after fix? frontend
+     - Blocked on other issue: Issue 1: Massive Untested Rewrite
+  - Issue 3: 
+     - Attempted fixes: None. The issue was reported by the user but has not been addressed.
+     - Next debug checklist: 
+        1. Review the game logic functions in  (e.g., , ) where the user's balance is debited and the bank is updated.
+        2. Look for potential data type errors, division by zero, or incorrect calculations that might occur only with large numbers.
+        3. Simulate a large bet using a  command to the game endpoints and monitor the backend logs for tracebacks.
+     - Why fix this issue and what will be achieved with the fix? This is a critical stability issue that breaks core gameplay and undermines user trust in the platform.
+     - Status:  NOT STARTED
+     - Is recurring issue? N
+     - Should Test frontend/backend/both after fix? backend
+     - Blocked on other issue: Issue 1: Massive Untested Rewrite
+
+**In progress Task List**:
+  - Task 1: Complete Wheel Game Integration (Priority: P1)
+  
+ Task Detail:
+  - Task 1: 
+     - Where to resume: The UI is fundamentally broken. Resume by debugging the CSS for the level selection buttons and ensuring all image assets (pointer, center) are displayed correctly.
+     - What will be achieved with this? A fully functional and visually correct Wheel game, as requested by the user.
+     - Status:  IN PROGRESS
+     - Should Test frontend/backend/both after fix? frontend
+     - Blocked on something: The highest priority is stabilizing the application after the massive rewrite (Issue 1).
+
+**Upcoming and Future Tasks**
+    Upcoming Tasks:
+    - **P0: Full Slots Integration:**
+        - Implement the backend callback endpoints (, , ) in  to handle requests from the  API.
+        - Implement the frontend for the  page in , including a search bar and a grid that fetches and displays games from the backend.
+        - Securely store and use the  and API keys from the  source code.
+    - **P1: Admin Panel Feature Completion:**
+        - **RTP Control:** Wire up the RTP settings UI in the  component () to the backend API that updates game RTP values in the  collection.
+        - **User Management:** Implement the edit balance functionality and ensure user IP addresses are fetched and displayed in the user list.
+        - **Advanced Promos:** Add backend logic and frontend UI to create and manage promo codes with different types (wager, deposit bonus).
+    - **P2: Integrate Additional Mini-Games:**
+        - Migrate the logic for games like **Crash** and **X100** from the  PHP controllers to new FastAPI endpoints in .
+        - Create corresponding React components and routes for these games in .
+
+    Future Tasks:
+    - Implement the anti-minus system logic found in the  codebase.
+    - Refine the referral and cashback systems to match the logic from the  codebase if it differs from the current implementation.
+
+**Completed work in this session**
+- List of all completed tasks with file and method name:
+    - Project migration from PHP/Laravel to FastAPI/React/MongoDB.
+    - Site branding and basic structure setup.
+    - Implementation of core games: Mines, Dice, Bubbles (, ).
+    - Basic password-protected admin panel (, ).
+    - Integration of a real Telegram Login widget, including backend hash verification (, ).
+
+- Recently completed:
+  - Initial implementation of the Wheel game (backend logic and broken frontend UI).
+  - Massive, untested rewrite of  and  to add scaffolding for slots, new games, and advanced admin features.
+
+**Earlier issues found/mentioned but not fixed**
+   - Issue 1: Site crashes on large bet amounts.
+     - Debug checklist:
+        1. Review betting logic in game endpoints in .
+        2. Check for data type or calculation errors with large numbers.
+        3. Test with  using a large bet amount and check logs.
+     - Why to solve this issue and what will be achieved with this? To fix a critical gameplay-breaking bug.
+     - Should Test frontend/backend/both after fix: backend
+     - Is recurring issue? N
+
+**Known issue recurrence from previous fork**
+  - None.
+
+**Code Architecture**
+
+
+**Key Technical Concepts**
+- **Backend:** FastAPI (Python)
+- **Frontend:** React.js
+- **Database:** MongoDB (using  async driver)
+- **Authentication:** JWT-based system with Telegram Login integration for token issuance.
+- **Third-Party APIs:** Integration with an external slot provider ().
+
+**key DB schema**
+  - **users**: 
+  - **games**: 
+  - **bank**: 
+  - **settings**: 
+  - **promocodes**: 
+
+**changes in tech stack**
+  - The entire project was migrated from a **PHP/Laravel/MySQL** stack to **FastAPI/React/MongoDB** to comply with the platform's supported technologies.
+
+**All files of reference**
+1.  : Contains the entire backend logic, including all API endpoints, game logic, database models, and authentication. It was recently overwritten with a large, untested block of code.
+2.  : A single-file React application containing all components, routing, and state management. It was also recently overwritten.
+3.  : A single CSS file containing all styles for the application.
+4.  : The most recent source of truth for required features like slots, mini-games, and advanced admin logic. It should be used as a reference.
+
+**Areas that need refactoring**:
+- The entire frontend is in a single massive file () and all styles are in . This is highly unmaintainable and should be broken down into a proper component-based structure (e.g., , , ).
+- The backend logic in  is also monolithic and should be split into routers, models, and services for better organization.
+
+**key api endpoints**
+- : Handles user login/registration via Telegram.
+- : Endpoints to play games (e.g., ).
+- : Endpoints for admin panel functionality (e.g., , ).
+- : Required callback endpoints for the slot provider (e.g., , ).
+
+**Critical Info for New Agent**
+- The project's current state is highly unstable due to a recent massive, untested rewrite of the core  and  files. Do not assume any of the new features work. Your first priority must be to stabilize, test, and debug the application.
+- All new feature logic (slots, advanced admin, new mini-games) should be based on the PHP code found in the  directory.
+- The slots integration is not self-contained; it relies on an external API provider () and requires implementing webhook/callback endpoints for debit and credit operations.
+
+**documents and test reports created in this job**
+  - /app/memory/PRD.md
+  - /app/test_reports/iteration_1.json
+
+**Last 10 User Messages and any pending HUMAN messages** 
+ 1. **User Request:** Fix the Wheel game UI, add RTP control, user balance editing, and IP viewing in the admin panel. Add advanced promo codes. Integrate all slots and mini-games from the newly provided  zip files, including setting up the API provider integration. Fix the site crash on large bets.
+ 2. **Agent Action:** Acknowledged the large request and started by unpacking and exploring the new files.
+ 3. **Agent Action:** Identified the slots API provider and the PHP controllers for RTP settings.
+ 4. **Agent Action:** Performed a massive, high-risk overwrite of  to add all requested backend features at once.
+ 5. **Agent Action:** Performed a massive overwrite of  to add UI for all new features and fix the Wheel game.
+ 6. **Agent Action:** Updated the admin panel UI in .
+ 7. **Agent Action:** Added CSS for all new components.
+ 8. **Agent Action:** Ran into a  and fixed it.
+ 9. **User Clarification:** The user reiterated that the slots must be *real* and fully integrated with the API provider, including balance updates and webhooks. They also re-emphasized adding all the other mini-games.
+ 10. **Agent Action:** Re-analyzed the  PHP code and correctly identified the need for / callback endpoints for the slots API. Began another massive overwrite of  to implement this.
+
+**Project Health Check:**
+- **Broken**: The application is in a broken and unstable state following a massive, untested rewrite of its core files.
+
+**3rd Party Integrations**
+ - **Telegram Login:** Used for user authentication.
+ - **Slots API Provider ():** An external service for providing slot games. Requires API keys and callback endpoints. Not fully integrated.
+
+**Testing status**
+  - Testing agent used after significant changes: NO (The last major rewrite was not followed by a test).
+  - Troubleshoot agent used after agent stuck in loop: NO
+  - Test files created: []
+  - Known regressions: The Wheel game UI is broken. The entire application is likely broken after the last rewrite.
+
+**Credentials to test flow:**
+- Demo login is available on the main page, which provides a starting balance of 1000.
+- Admin panel password is .
+
+**What agent forgot to execute**
+- The agent did not test its massive code rewrite, leaving the application in an unstable state.
+- The agent has not addressed the user-reported bug of the site crashing on large bets.
+- The agent abandoned the fix for the Wheel game's broken UI in favor of the larger rewrite.
+- The implementation of advanced promo codes and many of the new mini-games (besides the slot scaffolding) has not been started.</analysis>
