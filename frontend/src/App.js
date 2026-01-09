@@ -823,6 +823,155 @@ const WheelGame = () => {
   );
 };
 
+// Slots Page
+const SlotsPage = () => {
+  const { user, updateBalance } = useAuth();
+  const navigate = useNavigate();
+  const [slots, setSlots] = useState([]);
+  const [providers, setProviders] = useState([]);
+  const [search, setSearch] = useState('');
+  const [selectedProvider, setSelectedProvider] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [playingSlot, setPlayingSlot] = useState(null);
+  const [bet, setBet] = useState(10);
+  const [result, setResult] = useState(null);
+  const [spinning, setSpinning] = useState(false);
+
+  useEffect(() => {
+    fetchSlots();
+    fetchProviders();
+  }, [search, selectedProvider]);
+
+  const fetchSlots = async () => {
+    try {
+      const res = await api.get(`/slots?search=${search}&provider=${selectedProvider}`);
+      if (res.data.success) setSlots(res.data.slots);
+    } catch (e) {}
+    setLoading(false);
+  };
+
+  const fetchProviders = async () => {
+    try {
+      const res = await api.get('/slots/providers');
+      if (res.data.success) setProviders(res.data.providers);
+    } catch (e) {}
+  };
+
+  const playSlot = async (slotId) => {
+    if (!user) return navigate('/login');
+    if (user.balance < bet) return toast.error('Недостаточно средств');
+    
+    setSpinning(true);
+    setResult(null);
+    
+    try {
+      const res = await api.post(`/slots/play/${slotId}?bet=${bet}`);
+      
+      setTimeout(() => {
+        setSpinning(false);
+        if (res.data.success) {
+          setResult(res.data);
+          updateBalance(res.data.balance);
+          if (res.data.win > 0) {
+            toast.success(`Победа! +${res.data.win.toFixed(2)}₽ (x${res.data.multiplier})`);
+          } else {
+            toast.error('Не повезло!');
+          }
+        }
+      }, 2000);
+    } catch (e) {
+      setSpinning(false);
+      toast.error(e.response?.data?.detail || 'Ошибка');
+    }
+  };
+
+  return (
+    <div className="page slots-page" data-testid="slots-page">
+      <div className="slots-header">
+        <h2><i className="fa-solid fa-slot-machine"></i> Слоты</h2>
+        <div className="slots-filters">
+          <div className="search-box">
+            <i className="fa-solid fa-search"></i>
+            <input 
+              type="text" 
+              placeholder="Поиск игр..." 
+              value={search} 
+              onChange={e => setSearch(e.target.value)}
+              data-testid="slots-search"
+            />
+          </div>
+          <select 
+            value={selectedProvider} 
+            onChange={e => setSelectedProvider(e.target.value)}
+            data-testid="slots-provider-filter"
+          >
+            <option value="">Все провайдеры</option>
+            {providers.map(p => (
+              <option key={p.id} value={p.id}>{p.name}</option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      {playingSlot ? (
+        <div className="slot-game-modal" data-testid="slot-game-modal">
+          <div className="slot-game-content">
+            <button className="close-slot" onClick={() => { setPlayingSlot(null); setResult(null); }}>
+              <i className="fa-solid fa-times"></i>
+            </button>
+            <h3>{playingSlot.name}</h3>
+            <div className="slot-machine">
+              <div className={`slot-reels ${spinning ? 'spinning' : ''}`}>
+                {(result?.reels || [['❓','❓','❓'],['❓','❓','❓'],['❓','❓','❓'],['❓','❓','❓'],['❓','❓','❓']]).map((reel, i) => (
+                  <div key={i} className="slot-reel">
+                    {reel.map((symbol, j) => (
+                      <div key={j} className="slot-symbol">{symbol}</div>
+                    ))}
+                  </div>
+                ))}
+              </div>
+              {result && (
+                <div className={`slot-result ${result.win > 0 ? 'win' : 'lose'}`}>
+                  {result.win > 0 ? `+${result.win.toFixed(2)}₽` : 'Нет выигрыша'}
+                </div>
+              )}
+            </div>
+            <div className="slot-controls">
+              <div className="bet-input">
+                <button onClick={() => setBet(Math.max(1, bet / 2))}>½</button>
+                <input type="number" value={bet} onChange={e => setBet(Math.max(1, +e.target.value))} />
+                <button onClick={() => setBet(Math.min(user?.balance || 1000, bet * 2))}>×2</button>
+              </div>
+              <button className="btn-spin" onClick={() => playSlot(playingSlot.id)} disabled={spinning}>
+                {spinning ? <i className="fa-solid fa-spinner fa-spin"></i> : 'SPIN'}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      <div className="slots-grid" data-testid="slots-grid">
+        {loading ? (
+          <div className="loading"><i className="fa-solid fa-spinner fa-spin"></i></div>
+        ) : slots.length === 0 ? (
+          <div className="no-slots">Слоты не найдены</div>
+        ) : (
+          slots.map(slot => (
+            <div key={slot.id} className="slot-card" onClick={() => setPlayingSlot(slot)} data-testid={`slot-${slot.id}`}>
+              <img src={slot.image} alt={slot.name} className="slot-image" />
+              <div className="slot-info">
+                <h4>{slot.name}</h4>
+                <span className="slot-provider">{slot.provider}</span>
+              </div>
+              <button className="btn-play-slot">Играть</button>
+            </div>
+          ))
+        )}
+      </div>
+    </div>
+  );
+};
+
 const Wallet = () => {
   const { user, updateBalance } = useAuth();
   const [tab, setTab] = useState('deposit');
