@@ -1432,6 +1432,7 @@ function App() {
                     <Route path="/mines" element={<MinesGame />} />
                     <Route path="/dice" element={<DiceGame />} />
                     <Route path="/bubbles" element={<BubblesGame />} />
+                    <Route path="/wheel" element={<WheelGame />} />
                     <Route path="/wallet" element={<ProtectedRoute><Wallet /></ProtectedRoute>} />
                     <Route path="/bonus" element={<ProtectedRoute><Bonus /></ProtectedRoute>} />
                     <Route path="/ref" element={<ProtectedRoute><Referral /></ProtectedRoute>} />
