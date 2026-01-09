@@ -960,7 +960,12 @@ const SlotsPage = () => {
         ) : (
           slots.map(slot => (
             <div key={slot.id} className="slot-card" onClick={() => setPlayingSlot(slot)} data-testid={`slot-${slot.id}`}>
-              <img src={slot.image} alt={slot.name} className="slot-image" />
+              <img 
+                src={slot.image} 
+                alt={slot.name} 
+                className="slot-image" 
+                onError={(e) => { e.target.src = '/logo.png'; e.target.style.objectFit = 'contain'; e.target.style.padding = '10px'; }}
+              />
               <div className="slot-info">
                 <h4>{slot.name}</h4>
                 <span className="slot-provider">{slot.provider}</span>
