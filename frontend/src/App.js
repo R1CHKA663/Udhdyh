@@ -2001,6 +2001,10 @@ function App() {
                     <Route path="/dice" element={<DiceGame />} />
                     <Route path="/bubbles" element={<BubblesGame />} />
                     <Route path="/wheel" element={<WheelGame />} />
+                    <Route path="/crash" element={<CrashGame />} />
+                    <Route path="/x100" element={<X100Game />} />
+                    <Route path="/policy" element={<PolicyPage />} />
+                    <Route path="/terms" element={<TermsPage />} />
                     <Route path="/wallet" element={<ProtectedRoute><Wallet /></ProtectedRoute>} />
                     <Route path="/bonus" element={<ProtectedRoute><Bonus /></ProtectedRoute>} />
                     <Route path="/ref" element={<ProtectedRoute><Referral /></ProtectedRoute>} />
