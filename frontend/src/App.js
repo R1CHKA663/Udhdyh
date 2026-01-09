@@ -1471,6 +1471,39 @@ const AdminDashboard = () => {
           <div className="admin-users" data-testid="admin-users">
             <h2>Пользователи</h2>
             <input type="text" value={search} onChange={e => setSearch(e.target.value)} onKeyUp={e => e.key === 'Enter' && fetchData()} placeholder="Поиск..." />
+            
+            {editingUser && (
+              <div className="edit-user-modal">
+                <div className="edit-user-content">
+                  <h3>Редактирование: {editingUser.name}</h3>
+                  <div className="edit-field">
+                    <label>Баланс</label>
+                    <input type="number" value={editingUser.balance || 0} onChange={e => setEditingUser({...editingUser, balance: +e.target.value})} />
+                  </div>
+                  <div className="edit-field">
+                    <label>Drain</label>
+                    <input type="checkbox" checked={editingUser.is_drain || false} onChange={e => setEditingUser({...editingUser, is_drain: e.target.checked})} />
+                  </div>
+                  <div className="edit-field">
+                    <label>Drain %</label>
+                    <input type="number" value={editingUser.is_drain_chance || 20} onChange={e => setEditingUser({...editingUser, is_drain_chance: +e.target.value})} />
+                  </div>
+                  <div className="edit-field">
+                    <label>Youtuber</label>
+                    <input type="checkbox" checked={editingUser.is_youtuber || false} onChange={e => setEditingUser({...editingUser, is_youtuber: e.target.checked})} />
+                  </div>
+                  <div className="edit-field">
+                    <label>Бан</label>
+                    <input type="checkbox" checked={editingUser.is_ban || false} onChange={e => setEditingUser({...editingUser, is_ban: e.target.checked})} />
+                  </div>
+                  <div className="edit-buttons">
+                    <button onClick={updateUser}>Сохранить</button>
+                    <button onClick={() => setEditingUser(null)}>Отмена</button>
+                  </div>
+                </div>
+              </div>
+            )}
+            
             <table>
               <thead>
                 <tr>
@@ -1478,19 +1511,23 @@ const AdminDashboard = () => {
                   <th>Имя</th>
                   <th>Баланс</th>
                   <th>Депозит</th>
-                  <th>Рефералы</th>
+                  <th>IP</th>
                   <th>Дата</th>
+                  <th>Действия</th>
                 </tr>
               </thead>
               <tbody>
                 {users.map(u => (
-                  <tr key={u.id}>
+                  <tr key={u.id} className={u.is_ban ? 'banned' : ''}>
                     <td>{u.id.slice(0, 8)}</td>
-                    <td>{u.name}</td>
+                    <td>{u.name} {u.is_youtuber && '⭐'} {u.is_drain && '🎯'}</td>
                     <td>{u.balance?.toFixed(2)} ₽</td>
                     <td>{u.deposit?.toFixed(2)} ₽</td>
-                    <td>{u.referalov}</td>
+                    <td>{u.register_ip || '-'}</td>
                     <td>{new Date(u.created_at).toLocaleDateString()}</td>
+                    <td>
+                      <button className="btn-edit" onClick={() => setEditingUser({user_id: u.id, ...u})}>✏️</button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
