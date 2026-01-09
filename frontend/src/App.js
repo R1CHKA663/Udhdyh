@@ -39,6 +39,7 @@ const Header = () => {
           <Link to="/mines" className="nav-link" data-testid="nav-mines">Mines</Link>
           <Link to="/dice" className="nav-link" data-testid="nav-dice">Dice</Link>
           <Link to="/bubbles" className="nav-link" data-testid="nav-bubbles">Bubbles</Link>
+          <Link to="/wheel" className="nav-link" data-testid="nav-wheel">Wheel</Link>
           {user && <Link to="/bonus" className="nav-link" data-testid="nav-bonus">Бонусы</Link>}
           {user && <Link to="/ref" className="nav-link" data-testid="nav-ref">Партнёрка</Link>}
           <a href="https://t.me/easymoneycaspro" target="_blank" rel="noopener noreferrer" className="nav-link tg-link" data-testid="nav-telegram">
