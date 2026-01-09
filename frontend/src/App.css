@@ -1770,7 +1770,8 @@ main {
 .level-buttons {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
+  gap: 10px;
+  margin-top: 8px;
 }
 
 .level-btn {
