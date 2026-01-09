@@ -762,6 +762,118 @@ async def bubbles_play(data: BubblesPlayRequest, user: dict = Depends(get_curren
         "balance": user_data["balance"]
     }
 
+# ================== GAMES - WHEEL ==================
+
+WHEEL_COEFFICIENTS = {
+    1: {"blue": 1.2, "red": 1.5, "lose": 0},
+    2: {"blue": 1.2, "red": 1.5, "green": 3.0, "pink": 5.0, "lose": 0},
+    3: {"pink": 49.5, "lose": 0}
+}
+
+WHEEL_ITEMS = {
+    1: ["lose"] * 11 + ["red"] * 6 + ["blue"] * 36,
+    2: ["lose"] * 26 + ["blue"] * 14 + ["red"] * 9 + ["green"] * 4 + ["pink"] * 2,
+    3: ["lose"] * 50 + ["pink"] * 2
+}
+
+WHEEL_POSITIONS = {
+    1: {
+        "blue": [444, 500, 507, 514, 535, 542, 550, 560, 570, 590, 606, 630],
+        "red": [735, 736, 162],
+        "lose": [24, 130, 135, 492, 496]
+    },
+    2: {
+        "blue": [496, 668, 535, 520, 524, 534, 564, 594, 637],
+        "red": [707, 710, 1500, 1503, 625],
+        "green": [752, 755, 1472, 1475],
+        "pink": [505, 506, 507, 508, 509, 510],
+        "lose": [498, 530, 1477, 1479, 1505, 603, 629, 672, 515]
+    },
+    3: {
+        "pink": [1540, 1535, 1539, 1537],
+        "lose": [1000, 1050, 1532, 1543, 783, 283, 400, 900, 990, 1990, 1190, 590, 225, 825]
+    }
+}
+
+@api_router.post("/games/wheel/play")
+async def wheel_play(data: WheelPlayRequest, user: dict = Depends(get_current_user)):
+    """Play Wheel game"""
+    if user.get("is_ban"):
+        raise HTTPException(status_code=403, detail="Ваш аккаунт заблокирован")
+    
+    if user["balance"] < data.bet:
+        raise HTTPException(status_code=400, detail="Недостаточно средств")
+    
+    bank = await db.bank.find_one({"id": "main"})
+    
+    # Get items for level and pick random
+    items = WHEEL_ITEMS.get(data.level, WHEEL_ITEMS[1]).copy()
+    random.shuffle(items)
+    color = random.choice(items)
+    
+    coef = WHEEL_COEFFICIENTS.get(data.level, {}).get(color, 0)
+    total_win = round(data.bet * coef, 2)
+    profit = total_win - data.bet
+    
+    # Bank protection
+    if total_win > 0 and not user.get("is_youtuber"):
+        bank_wheel = bank.get("wheel", 10000)
+        if profit > bank_wheel:
+            color = "lose"
+            coef = 0
+            total_win = 0
+            profit = -data.bet
+        
+        # Drain check
+        if user.get("is_drain") and user.get("is_drain_chance", 20) > random.randint(1, 100):
+            color = "lose"
+            coef = 0
+            total_win = 0
+            profit = -data.bet
+    
+    # Update user balance
+    await db.users.update_one(
+        {"id": user["id"]}, 
+        {"$inc": {"balance": profit, "wager": -data.bet}}
+    )
+    
+    # Update bank
+    if coef > 0:
+        if not user.get("is_youtuber"):
+            await db.bank.update_one({"id": "main"}, {"$inc": {"wheel": -profit}})
+    else:
+        if not user.get("is_youtuber"):
+            fee = bank.get("fee_wheel", 25)
+            await db.bank.update_one({"id": "main"}, {"$inc": {"wheel": data.bet * (1 - fee / 100)}})
+        await calculate_raceback(user["id"], "wheel", data.bet)
+    
+    # Get position for animation
+    positions = WHEEL_POSITIONS.get(data.level, {}).get(color, [0])
+    position = random.choice(positions)
+    
+    # Log game
+    await db.wheel_games.insert_one({
+        "id": str(uuid.uuid4()),
+        "user_id": user["id"],
+        "bet": data.bet,
+        "level": data.level,
+        "color": color,
+        "coef": coef,
+        "win": total_win,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    })
+    
+    user_data = await db.users.find_one({"id": user["id"]}, {"_id": 0})
+    
+    return {
+        "success": True,
+        "color": color,
+        "coef": coef,
+        "win": total_win,
+        "position": position,
+        "balance": user_data["balance"]
+    }
+
 # ================== REFERRAL SYSTEM ==================
 
 @api_router.get("/ref/stats")
