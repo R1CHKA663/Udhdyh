@@ -112,8 +112,8 @@ const GameHistory = () => {
     return () => clearInterval(interval);
   }, []);
 
-  const gameIcons = { mines: 'fa-bomb', dice: 'fa-dice', bubbles: 'fa-circle' };
-  const gameNames = { mines: 'Mines', dice: 'Dice', bubbles: 'Bubbles' };
+  const gameIcons = { mines: 'fa-bomb', dice: 'fa-dice', bubbles: 'fa-circle', wheel: 'fa-dharmachakra' };
+  const gameNames = { mines: 'Mines', dice: 'Dice', bubbles: 'Bubbles', wheel: 'Wheel' };
 
   return (
     <div className="game-history" data-testid="game-history">
