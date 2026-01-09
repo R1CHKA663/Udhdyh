@@ -85,3 +85,7 @@ project.zip
 *.env
 *.env.*
 golden-x-main.zip
+-e 
+# Environment files
+*.env
+*.env.*
