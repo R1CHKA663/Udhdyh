@@ -1637,18 +1637,14 @@ main {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 500px;
-  flex-direction: column;
-  padding: 40px;
+  min-height: 450px;
+  padding: 20px;
 }
 
 .wheel-container {
   position: relative;
-  width: 400px;
-  height: 400px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  width: 380px;
+  height: 380px;
 }
 
 .wheel-circle {
