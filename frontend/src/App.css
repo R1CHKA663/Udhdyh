@@ -1942,6 +1942,8 @@ main {
   width: 100%;
   aspect-ratio: 4/3;
   object-fit: cover;
+  background: var(--bg-secondary);
+  max-height: 150px;
 }
 
 .slot-info {
