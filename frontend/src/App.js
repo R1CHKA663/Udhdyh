@@ -764,17 +764,30 @@ const WheelGame = () => {
           <div className="control-group">
             <label>Уровень сложности</label>
             <div className="level-buttons">
-              {[1, 2, 3].map(l => (
-                <button 
-                  key={l} 
-                  className={`level-btn ${level === l ? 'active' : ''}`}
-                  onClick={() => !loading && setLevel(l)}
-                  disabled={loading}
-                  data-testid={`wheel-level-${l}`}
-                >
-                  {levelNames[l]}
-                </button>
-              ))}
+              <button 
+                className={`level-btn ${level === 1 ? 'active' : ''}`}
+                onClick={() => !loading && setLevel(1)}
+                disabled={loading}
+                data-testid="wheel-level-1"
+              >
+                Легкий
+              </button>
+              <button 
+                className={`level-btn ${level === 2 ? 'active' : ''}`}
+                onClick={() => !loading && setLevel(2)}
+                disabled={loading}
+                data-testid="wheel-level-2"
+              >
+                Средний
+              </button>
+              <button 
+                className={`level-btn ${level === 3 ? 'active' : ''}`}
+                onClick={() => !loading && setLevel(3)}
+                disabled={loading}
+                data-testid="wheel-level-3"
+              >
+                Сложный
+              </button>
             </div>
           </div>
           
