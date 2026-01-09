@@ -36,9 +36,9 @@ const Header = () => {
         
         <nav className={`nav ${menuOpen ? 'open' : ''}`} data-testid="nav-menu">
           <Link to="/" className="nav-link" data-testid="nav-home">Главная</Link>
+          <Link to="/slots" className="nav-link" data-testid="nav-slots">Слоты</Link>
           <Link to="/mines" className="nav-link" data-testid="nav-mines">Mines</Link>
           <Link to="/dice" className="nav-link" data-testid="nav-dice">Dice</Link>
-          <Link to="/bubbles" className="nav-link" data-testid="nav-bubbles">Bubbles</Link>
           <Link to="/wheel" className="nav-link" data-testid="nav-wheel">Wheel</Link>
           {user && <Link to="/bonus" className="nav-link" data-testid="nav-bonus">Бонусы</Link>}
           {user && <Link to="/ref" className="nav-link" data-testid="nav-ref">Партнёрка</Link>}
