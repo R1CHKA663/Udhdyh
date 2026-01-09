@@ -149,7 +149,10 @@ const Home = () => {
     { id: 'mines', name: 'Mines', icon: 'fa-bomb', desc: 'Найди все алмазы и избегай бомб!', color: '#10b981' },
     { id: 'dice', name: 'Dice', icon: 'fa-dice', desc: 'Угадай число и выиграй!', color: '#3b82f6' },
     { id: 'bubbles', name: 'Bubbles', icon: 'fa-circle', desc: 'Поймай свой множитель!', color: '#8b5cf6' },
-    { id: 'wheel', name: 'Wheel', icon: 'fa-dharmachakra', desc: 'Крути колесо фортуны!', color: '#f59e0b' }
+    { id: 'wheel', name: 'Wheel', icon: 'fa-dharmachakra', desc: 'Крути колесо фортуны!', color: '#f59e0b' },
+    { id: 'crash', name: 'Crash', icon: 'fa-rocket', desc: 'Успей забрать до краша!', color: '#ef4444' },
+    { id: 'x100', name: 'X100', icon: 'fa-circle-notch', desc: 'Поймай x100 множитель!', color: '#ec4899' },
+    { id: 'slots', name: 'Слоты', icon: 'fa-slot-machine', desc: 'Реальные слоты от провайдеров!', color: '#06b6d4' }
   ];
 
   return (
