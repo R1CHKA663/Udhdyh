@@ -1677,6 +1677,7 @@ function App() {
                   <Routes>
                     <Route path="/" element={<Home />} />
                     <Route path="/login" element={<Login />} />
+                    <Route path="/slots" element={<SlotsPage />} />
                     <Route path="/mines" element={<MinesGame />} />
                     <Route path="/dice" element={<DiceGame />} />
                     <Route path="/bubbles" element={<BubblesGame />} />
