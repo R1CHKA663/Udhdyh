@@ -1915,22 +1915,6 @@ main {
   border: none;
 }
 
-/* Slots Grid Fix */
-.slots-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: 20px;
-}
-
-.slot-card {
-  background: var(--bg-card);
-  border-radius: 16px;
-  overflow: hidden;
-  cursor: pointer;
-  transition: all 0.3s;
-  border: 1px solid var(--border-color);
-}
-
 /* Slots Page */
 .slots-page {
   padding: 20px 0;
