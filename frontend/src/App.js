@@ -763,12 +763,13 @@ const WheelGame = () => {
           
           <div className="control-group">
             <label>Уровень сложности</label>
-            <div className="level-buttons">
+            <div style={{ display: 'flex', gap: '10px', marginTop: '8px' }}>
               <button 
                 className={`level-btn ${level === 1 ? 'active' : ''}`}
                 onClick={() => !loading && setLevel(1)}
                 disabled={loading}
                 data-testid="wheel-level-1"
+                style={{ flex: 1 }}
               >
                 Легкий
               </button>
@@ -777,6 +778,7 @@ const WheelGame = () => {
                 onClick={() => !loading && setLevel(2)}
                 disabled={loading}
                 data-testid="wheel-level-2"
+                style={{ flex: 1 }}
               >
                 Средний
               </button>
@@ -785,6 +787,7 @@ const WheelGame = () => {
                 onClick={() => !loading && setLevel(3)}
                 disabled={loading}
                 data-testid="wheel-level-3"
+                style={{ flex: 1 }}
               >
                 Сложный
               </button>
