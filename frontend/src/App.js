@@ -1298,7 +1298,9 @@ const AdminDashboard = () => {
   const [promos, setPromos] = useState([]);
   const [tab, setTab] = useState('stats');
   const [search, setSearch] = useState('');
-  const [newPromo, setNewPromo] = useState({ name: '', reward: 100, limit: 100, type: 0, deposit_required: false });
+  const [newPromo, setNewPromo] = useState({ name: '', reward: 100, limit: 100, type: 0, deposit_required: false, wager_multiplier: 3, bonus_percent: 0 });
+  const [rtpSettings, setRtpSettings] = useState({});
+  const [editingUser, setEditingUser] = useState(null);
   const navigate = useNavigate();
 
   const adminApi = axios.create({ baseURL: API });
@@ -1316,9 +1318,12 @@ const AdminDashboard = () => {
 
   const fetchData = async () => {
     try {
-      if (tab === 'stats') {
+      if (tab === 'stats' || tab === 'rtp') {
         const res = await adminApi.get('/admin/stats');
-        if (res.data.success) setStats(res.data);
+        if (res.data.success) {
+          setStats(res.data);
+          setRtpSettings(res.data.settings || {});
+        }
       } else if (tab === 'users') {
         const res = await adminApi.get(`/admin/users?search=${search}`);
         if (res.data.success) setUsers(res.data.users);
@@ -1351,10 +1356,31 @@ const AdminDashboard = () => {
     try {
       await adminApi.post('/admin/promo', newPromo);
       toast.success('Промокод создан');
-      setNewPromo({ name: '', reward: 100, limit: 100, type: 0, deposit_required: false });
+      setNewPromo({ name: '', reward: 100, limit: 100, type: 0, deposit_required: false, wager_multiplier: 3, bonus_percent: 0 });
       fetchData();
     } catch (e) {
       toast.error(e.response?.data?.detail || 'Ошибка');
+    }
+  };
+
+  const updateRTP = async () => {
+    try {
+      await adminApi.put('/admin/rtp', rtpSettings);
+      toast.success('RTP обновлен');
+    } catch (e) {
+      toast.error('Ошибка');
+    }
+  };
+
+  const updateUser = async () => {
+    if (!editingUser) return;
+    try {
+      await adminApi.put('/admin/user', editingUser);
+      toast.success('Пользователь обновлен');
+      setEditingUser(null);
+      fetchData();
+    } catch (e) {
+      toast.error('Ошибка');
     }
   };
 
@@ -1362,6 +1388,8 @@ const AdminDashboard = () => {
     localStorage.removeItem('adminToken');
     navigate('/apminpannelonlyadmins');
   };
+
+  const promoTypes = ['Баланс', 'Бонус к депозиту %', 'Фриспины', 'Без вейджера', 'Кешбэк'];
 
   return (
     <div className="admin-dashboard" data-testid="admin-dashboard">
@@ -1372,6 +1400,7 @@ const AdminDashboard = () => {
         </div>
         <nav>
           <button className={tab === 'stats' ? 'active' : ''} onClick={() => setTab('stats')}><i className="fa-solid fa-chart-pie"></i> Статистика</button>
+          <button className={tab === 'rtp' ? 'active' : ''} onClick={() => setTab('rtp')}><i className="fa-solid fa-percent"></i> RTP</button>
           <button className={tab === 'users' ? 'active' : ''} onClick={() => setTab('users')}><i className="fa-solid fa-users"></i> Пользователи</button>
           <button className={tab === 'withdraws' ? 'active' : ''} onClick={() => setTab('withdraws')}><i className="fa-solid fa-money-bill-transfer"></i> Выводы</button>
           <button className={tab === 'promos' ? 'active' : ''} onClick={() => setTab('promos')}><i className="fa-solid fa-ticket"></i> Промокоды</button>
@@ -1397,7 +1426,46 @@ const AdminDashboard = () => {
                 <div className="stat-value">{stats.payments.all?.toFixed(2)} ₽</div>
               </div>
               <div className="stat-card">
-                <h4>Выводы сегодня</h4>
+                <h4>Ожидающие выводы</h4>
+                <div className="stat-value">{stats.withdrawals.pending_count} ({stats.withdrawals.pending_sum?.toFixed(2)} ₽)</div>
+              </div>
+              <div className="stat-card">
+                <h4>Пользователей</h4>
+                <div className="stat-value">{stats.users.all}</div>
+              </div>
+              <div className="stat-card">
+                <h4>Новых сегодня</h4>
+                <div className="stat-value">{stats.users.today}</div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {tab === 'rtp' && (
+          <div className="admin-rtp" data-testid="admin-rtp">
+            <h2>Настройки RTP (Return To Player)</h2>
+            <p className="rtp-desc">RTP определяет процент возврата игроку. Чем выше RTP, тем чаще игроки выигрывают.</p>
+            <div className="rtp-grid">
+              {['dice', 'mines', 'bubbles', 'wheel', 'slots'].map(game => (
+                <div key={game} className="rtp-item">
+                  <label>{game.charAt(0).toUpperCase() + game.slice(1)} RTP</label>
+                  <div className="rtp-input">
+                    <input 
+                      type="range" 
+                      min="90" 
+                      max="99.9" 
+                      step="0.1"
+                      value={rtpSettings[`${game}_rtp`] || 97}
+                      onChange={e => setRtpSettings({...rtpSettings, [`${game}_rtp`]: parseFloat(e.target.value)})}
+                    />
+                    <span>{rtpSettings[`${game}_rtp`] || 97}%</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <button className="btn-save-rtp" onClick={updateRTP}>Сохранить RTP</button>
+          </div>
+        )}
                 <div className="stat-value">{stats.withdrawals.today?.toFixed(2)} ₽</div>
               </div>
               <div className="stat-card">
