@@ -89,8 +89,10 @@ const Footer = () => (
       </div>
       <div className="footer-links">
         <a href="https://t.me/easymoneycaspro" target="_blank" rel="noopener noreferrer">
-          <i className="fa-brands fa-telegram"></i> Telegram канал
+          <i className="fa-brands fa-telegram"></i> Telegram
         </a>
+        <Link to="/policy"><i className="fa-solid fa-shield-halved"></i> Политика конфиденциальности</Link>
+        <Link to="/terms"><i className="fa-solid fa-file-contract"></i> Пользовательское соглашение</Link>
       </div>
       <div className="footer-copy">© 2025 EASY MONEY. Все права защищены.</div>
     </div>
