@@ -659,6 +659,159 @@ const BubblesGame = () => {
   );
 };
 
+const WheelGame = () => {
+  const { user, updateBalance } = useAuth();
+  const navigate = useNavigate();
+  const [bet, setBet] = useState(10);
+  const [level, setLevel] = useState(1);
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState(null);
+  const [rotation, setRotation] = useState(0);
+  const [spinning, setSpinning] = useState(false);
+
+  const coefficients = {
+    1: [
+      { color: 'lose', coef: 0, label: 'x0.0', fill: '#273451' },
+      { color: 'blue', coef: 1.2, label: 'x1.2', fill: '#5480f2' },
+      { color: 'red', coef: 1.5, label: 'x1.5', fill: '#f34102' }
+    ],
+    2: [
+      { color: 'lose', coef: 0, label: 'x0.0', fill: '#273451' },
+      { color: 'blue', coef: 1.2, label: 'x1.2', fill: '#5480f2' },
+      { color: 'red', coef: 1.5, label: 'x1.5', fill: '#f34102' },
+      { color: 'green', coef: 3.0, label: 'x3.0', fill: '#91dc00' },
+      { color: 'pink', coef: 5.0, label: 'x5.0', fill: '#ed44cc' }
+    ],
+    3: [
+      { color: 'lose', coef: 0, label: 'x0.0', fill: '#24304a' },
+      { color: 'pink', coef: 49.5, label: 'x49.5', fill: '#5983b4' }
+    ]
+  };
+
+  const levelNames = { 1: 'Легкий', 2: 'Средний', 3: 'Сложный' };
+
+  const play = async () => {
+    if (!user) return navigate('/login');
+    if (user.balance < bet) return toast.error('Недостаточно средств');
+    
+    setLoading(true);
+    setSpinning(true);
+    setResult(null);
+    
+    try {
+      const res = await api.post('/games/wheel/play', { bet, level });
+      
+      if (res.data.success) {
+        // Calculate rotation
+        const position = res.data.position || 0;
+        const newRotation = rotation + position + (360 * 3);
+        setRotation(newRotation);
+        
+        // Wait for animation
+        setTimeout(() => {
+          setSpinning(false);
+          setResult(res.data);
+          updateBalance(res.data.balance);
+          
+          if (res.data.win > 0) {
+            toast.success(`Победа! +${res.data.win.toFixed(2)}₽ (x${res.data.coef})`);
+          } else {
+            toast.error('Не повезло! Попробуйте ещё');
+          }
+          setLoading(false);
+        }, 4500);
+      }
+    } catch (e) {
+      setSpinning(false);
+      toast.error(e.response?.data?.detail || 'Ошибка');
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="page game-page wheel-page" data-testid="wheel-page">
+      <div className="game-container">
+        <div className="game-board wheel-board" data-testid="wheel-board">
+          <div className="wheel-container">
+            <div className="wheel-circle">
+              <img 
+                src={`/assets/wheel/${level}.png`} 
+                alt="Wheel" 
+                className="wheel-img"
+                style={{ transform: `rotate(${rotation}deg)` }}
+              />
+              <div className="wheel-inset"></div>
+              <div className="wheel-arrow"></div>
+            </div>
+            <div className="wheel-inner">
+              {!result ? (
+                <div className="wheel-coefficients">
+                  {coefficients[level].map((c, i) => (
+                    <div key={i} className="wheel-coef-item">
+                      <span className="wheel-coef-dot" style={{ background: c.fill }}></span>
+                      <span>{c.label}</span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className={`wheel-result ${result.win > 0 ? 'win' : 'lose'}`}>
+                  <div className="wheel-result-win">{result.win?.toFixed(2)} ₽</div>
+                  <div className="wheel-result-coef">x{result.coef}</div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="game-controls" data-testid="wheel-controls">
+          <h2><i className="fa-solid fa-dharmachakra"></i> Wheel</h2>
+          
+          <div className="control-group">
+            <label>Уровень сложности</label>
+            <div className="level-buttons">
+              {[1, 2, 3].map(l => (
+                <button 
+                  key={l} 
+                  className={`level-btn ${level === l ? 'active' : ''}`}
+                  onClick={() => !loading && setLevel(l)}
+                  disabled={loading}
+                  data-testid={`wheel-level-${l}`}
+                >
+                  {levelNames[l]}
+                </button>
+              ))}
+            </div>
+          </div>
+          
+          <div className="control-group">
+            <label>Ставка</label>
+            <div className="bet-input">
+              <button onClick={() => setBet(Math.max(1, bet / 2))} disabled={loading}>½</button>
+              <input type="number" value={bet} onChange={e => setBet(Math.max(1, +e.target.value))} disabled={loading} data-testid="wheel-bet-input" />
+              <button onClick={() => setBet(Math.min(user?.balance || 1000, bet * 2))} disabled={loading}>×2</button>
+            </div>
+          </div>
+
+          <div className="wheel-info">
+            <div className="wheel-info-title">Множители уровня {level}:</div>
+            <div className="wheel-info-list">
+              {coefficients[level].filter(c => c.coef > 0).map((c, i) => (
+                <span key={i} style={{ color: c.fill }}>x{c.coef}</span>
+              ))}
+            </div>
+          </div>
+
+          <button className="btn-start wheel-spin-btn" onClick={play} disabled={loading} data-testid="wheel-play-btn">
+            {loading ? (
+              spinning ? <><i className="fa-solid fa-dharmachakra fa-spin"></i> Крутится...</> : <i className="fa-solid fa-spinner fa-spin"></i>
+            ) : 'Крутить колесо'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const Wallet = () => {
   const { user, updateBalance } = useAuth();
   const [tab, setTab] = useState('deposit');
