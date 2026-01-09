@@ -740,20 +740,17 @@ const WheelGame = () => {
                 className="wheel-img"
                 style={{ transform: `rotate(${rotation}deg)` }}
               />
-              <div className="wheel-inset"></div>
               <div className="wheel-pointer"></div>
-            </div>
-            <div className="wheel-center">
-              {result ? (
-                <div className={`wheel-result ${result.win > 0 ? 'win' : 'lose'}`}>
-                  <div className="wheel-result-win">{result.win?.toFixed(2)} ₽</div>
-                  <div className="wheel-result-coef">x{result.coef}</div>
-                </div>
-              ) : (
-                <div className="wheel-logo">
-                  <img src="/logo.png" alt="EASY MONEY" />
-                </div>
-              )}
+              <div className="wheel-center">
+                {result ? (
+                  <div className={`wheel-result ${result.win > 0 ? 'win' : 'lose'}`}>
+                    <div className="wheel-result-win">{result.win?.toFixed(2)} ₽</div>
+                    <div className="wheel-result-coef">x{result.coef}</div>
+                  </div>
+                ) : (
+                  <div className="wheel-logo">SPIN</div>
+                )}
+              </div>
             </div>
           </div>
         </div>
